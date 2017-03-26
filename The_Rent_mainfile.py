@@ -9,24 +9,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 get_ipython().magic('matplotlib inline')
 
-#lol hesham
-# damn hesham, your jupyter game is weak
-# Damn Christophers spyder game is strong
-
 import matplotlib as mpl
-mpl.rc("savefig", dpi=150)
+mpl.rc("savefig", dpi=300)
 
 
 # In[2]:
 
 df = pd.read_json("train.json")
 
+#Create dataframes bsaed on interest levels
+df_low      = df.drop(df[df.interest_level != "low"].index)
+df_medium   = df.drop(df[df.interest_level != "medium"].index)
+df_high     = df.drop(df[df.interest_level != "high"].index)
 
-# # Data Preprocessing and Feature Engineering
 
 # In[3]:
 
-# Cut data by 1st and 99th percentile
+df.head(3)
+df.describe()
+
+
+# # Data Preprocessing and Feature Engineering
+
+# In[4]:
+
+# cut data by 1st and 99th percentile
 def price_percent_cut(df_NEW, col):
     price_low = np.percentile(df_NEW[col].values, 1)
     price_high = np.percentile(df_NEW[col].values, 99)
@@ -52,25 +59,13 @@ def clean_preprocess(initial_df):
 
 
 # Remove prices outside of defined range
-def remove_outlier_prices(df_NEW):
-    price_low = 1000
-    price_high = 15000
-    #price_low = np.percentile(df_NEW['price'].values, 0.5)
-    #price_high = np.percentile(df_NEW['price'].values, 99.5)
-    
+def remove_outlier_prices(df_NEW):    
     df_NEW = df_NEW.drop(df_NEW[df_NEW.price < price_low].index)
     df_NEW = df_NEW.drop(df_NEW[df_NEW.price > price_high].index)    
     return df_NEW
 
-
 # Remove locations outside of New York
 def remove_nonNY_coords(df_NEW):    
-    # Define upper and lower limits for NewYork
-    long_low = -74.1
-    long_high = -73.6
-    lat_low = 35
-    lat_high = 41
-    
     #Removing out of bounds longitude
     df_NEW = df_NEW.drop(df_NEW[df_NEW.longitude < long_low].index)
     df_NEW = df_NEW.drop(df_NEW[df_NEW.longitude > long_high].index)
@@ -81,8 +76,25 @@ def remove_nonNY_coords(df_NEW):
 
     return df_NEW
 
+df = pd.read_json("train.json")
 
-# In[4]:
+#Price limits
+price_low = 1000
+#price_high = 10000
+#price_low = np.percentile(df['price'].values, 0.5)
+price_high = np.percentile(df['price'].values, 99)
+
+# Define upper and lower limits for NewYork
+long_low  = -74.1
+long_high = -73.6
+lat_low   =  35
+lat_high  =  41
+
+
+# # Run it
+# This cell calls the above functions and show how many rows of data are removed at each step
+
+# In[5]:
 
 dataCount = len(df)
 print(dataCount,"datapoints in dataset")
@@ -104,32 +116,39 @@ print("remove_outlier_prices removed",dataCount-newCount,"datapoints")
 print(newCount, "datapoints remaining")
 
 
-# In[5]:
+# # Plotting
+
+# In[6]:
 
 import matplotlib.pyplot as plt
 
 #plt.scatter(df['longitude'], df['latitude'])
-plt.hist(df['price'], 50)
+plt.hist(df['price'], 100)
+plt.title("Distribution with top 1% removed")
+plt.xlabel("Price")
+plt.ylabel("Count")
+
 #plt.hist(df['longitude'],50)
 #plt.hist(df['longitude'],50)
 plt.show()
 
 
-# # Feature Engineering
+# # Feature Creation
 
-# ### Distances from borough centres
-
-# In[6]:
+# In[7]:
 
 # distance from borough centres
-
-the_bronx = [40.8448, -73.8648]
-manhattan = [40.7831, -73.9712]
-queens = [40.7282, -73.7949]
-brooklyn = [40.6782, -73.9442]
+the_bronx     = [40.8448, -73.8648]
+manhattan     = [40.7831, -73.9712]
+queens        = [40.7282, -73.7949]
+brooklyn      = [40.6782, -73.9442]
 staten_island = [40.5795, -74.1502]
 
-borough_list = {'the_bronx': the_bronx, 'manhattan': manhattan, 'queens': queens, 'brooklyn': brooklyn, 'staten_island': staten_island}
+borough_list = {'the_bronx': the_bronx, 
+                'manhattan': manhattan, 
+                'queens': queens, 
+                'brooklyn': brooklyn, 
+                'staten_island': staten_island}
 
 def euclid_dist(x, lat, long):
     return np.sqrt((x[0]-lat)**2 + (x[1]-long)**2)
@@ -139,9 +158,6 @@ for key in borough_list:
 
 
 # ### Description BoW - TO FINISH
-
-# In[7]:
-
 import nltk
 from nltk.stem import WordNetLemmatizer
 import re, html
@@ -169,8 +185,6 @@ def makeFreqDict(description):
                 wordFreqDict[word] = 1
                         
 makeFreqDict(description)
-
-
 # # Exploratory Data Analysis
 
 # ### EDA - Data Examples
@@ -306,7 +320,7 @@ from sklearn_pandas import DataFrameMapper
 
 # ### Splitting Dataset
 
-# In[ ]:
+# In[18]:
 
 # determine features to use for modelling prior to data split
 features_to_use = ['bathrooms','bedrooms','price', 'the_bronx', 'staten_island','manhattan','queens','brooklyn', 'num_of_photos']
@@ -341,7 +355,7 @@ X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
 
 # ### Baseline Model
 
-# In[ ]:
+# In[19]:
 
 # define model params
 model = RandomForestClassifier(n_estimators=100)
@@ -368,12 +382,17 @@ print("log loss - validation:", log_loss(y_val, y_hat_val))
 
 # # Modelling TODO
 
-# In[ ]:
+# In[20]:
 
 # feature importance measures
 
-from sklearn.ensemble import ExtraTreesClassifier
-clf = ExtraTreesClassifier()
-clf = clf.fit(features, target)
-clf.feature_importances_
+#from sklearn.ensemble import ExtraTreesClassifier
+#clf = ExtraTreesClassifier()
+#clf = clf.fit(features, target)
+#clf.feature_importances_
+
+
+# In[ ]:
+
+
 
