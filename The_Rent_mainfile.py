@@ -365,13 +365,7 @@ print("log loss - validation:", log_loss(y_val, y_hat_val))
 #from sklearn.ensemble import ExtraTreesClassifier
 #clf = ExtraTreesClassifier()
 #clf = clf.fit(features, target)
-<<<<<<< HEAD
 #clf.feature_importances_
 
 
-# In[ ]:
 
-
-=======
-#clf.feature_importances_
->>>>>>> origin/master
