@@ -7,7 +7,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-get_ipython().magic('matplotlib inline')
+#get_ipython().magic('matplotlib inline')
 
 import matplotlib as mpl
 mpl.rc("savefig", dpi=300)
@@ -393,6 +393,5 @@ print("log loss - validation:", log_loss(y_val, y_hat_val))
 
 
 # In[ ]:
-
 
 
