@@ -11,7 +11,7 @@ import matplotlib as mpl
 import numpy as np
 #get_ipython().magic('matplotlib inline')
 
-mpl.rc("savefig", dpi=300)      ## What is this doing?
+mpl.rc("savefig", dpi=100)      ## What is this doing?
 
 # In[2]:
 #==============================================================================
