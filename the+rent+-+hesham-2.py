@@ -11,6 +11,7 @@ get_ipython().magic('matplotlib inline')
 
 #lol hesham
 # damn hesham, your jupyter game is weak
+# Damn Christophers spyder game is strong
 
 import matplotlib as mpl
 mpl.rc("savefig", dpi=150)
