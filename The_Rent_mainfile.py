@@ -1,20 +1,22 @@
-
 # coding: utf-8
 
 # In[1]:
-
+#==============================================================================
+# Import libraries
+#==============================================================================
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 #get_ipython().magic('matplotlib inline')
 
-import matplotlib as mpl
-mpl.rc("savefig", dpi=300)
-
+mpl.rc("savefig", dpi=300)      ## What is this doing?
 
 # In[2]:
-
+#==============================================================================
+# Read data and create dataframes
+#==============================================================================
 df = pd.read_json("train.json")
 
 #Create dataframes bsaed on interest levels
@@ -22,17 +24,15 @@ df_low      = df.drop(df[df.interest_level != "low"].index)
 df_medium   = df.drop(df[df.interest_level != "medium"].index)
 df_high     = df.drop(df[df.interest_level != "high"].index)
 
-
 # In[3]:
 
 df.head(3)
 df.describe()
 
-
-# # Data Preprocessing and Feature Engineering
-
 # In[4]:
-
+#==============================================================================
+# Data Preprocessing and Feature Engineering
+#==============================================================================
 # cut data by 1st and 99th percentile
 def price_percent_cut(df_NEW, col):
     price_low = np.percentile(df_NEW[col].values, 1)
@@ -42,7 +42,6 @@ def price_percent_cut(df_NEW, col):
     df_NEW = df_NEW.drop(df_NEW[df_NEW.col > price_high].index)
     
     return df_NEW
-
 
 # Datetime object and number of photos feature engineering
 def clean_preprocess(initial_df):
@@ -76,9 +75,9 @@ def remove_nonNY_coords(df_NEW):
 
     return df_NEW
 
-df = pd.read_json("train.json")
-
-#Price limits
+#==============================================================================
+# Control panel for price and location data
+#==============================================================================
 price_low = 1000
 #price_high = 10000
 #price_low = np.percentile(df['price'].values, 0.5)
@@ -90,12 +89,10 @@ long_high = -73.6
 lat_low   =  35
 lat_high  =  41
 
-
-# # Run it
-# This cell calls the above functions and show how many rows of data are removed at each step
-
 # In[5]:
-
+#==============================================================================
+# Clean data and show how many rows of data are removed at each step
+#==============================================================================
 dataCount = len(df)
 print(dataCount,"datapoints in dataset")
 
@@ -116,27 +113,31 @@ print("remove_outlier_prices removed",dataCount-newCount,"datapoints")
 print(newCount, "datapoints remaining")
 
 
-# # Plotting
-
 # In[6]:
-
-import matplotlib.pyplot as plt
-
-#plt.scatter(df['longitude'], df['latitude'])
+#==============================================================================
+# Price plotting
+#==============================================================================
 plt.hist(df['price'], 100)
 plt.title("Distribution with top 1% removed")
 plt.xlabel("Price")
 plt.ylabel("Count")
+plt.show()
 
-#plt.hist(df['longitude'],50)
-#plt.hist(df['longitude'],50)
+# In[]:
+#==============================================================================
+# Location plotting
+#==============================================================================
+plt.hist(df['price'], 100)
+plt.title("Distribution with top 1% removed")
+plt.xlabel("Price")
+plt.ylabel("Count")
 plt.show()
 
 
-# # Feature Creation
-
 # In[7]:
-
+#==============================================================================
+# Feature Creation
+#==============================================================================
 # distance from borough centres
 the_bronx     = [40.8448, -73.8648]
 manhattan     = [40.7831, -73.9712]
@@ -185,33 +186,17 @@ def makeFreqDict(description):
                 wordFreqDict[word] = 1
                         
 makeFreqDict(description)
-# # Exploratory Data Analysis
-
-# ### EDA - Data Examples
-
-# In[8]:
-
-df.head(3)
-
-
-# ### EDA - Numerical Category Summarisation
-
-# In[9]:
-
-df.describe()
-
-
-# ### EDA - Column Headers
 
 # In[10]:
-
+#==============================================================================
+# EDA - Column Headers
+#==============================================================================
 df.columns.tolist()
 
-
-# ### EDA - general
-
 # In[11]:
-
+#==============================================================================
+# EDA - General
+#==============================================================================
 # plot of interest levels
 interest_cat = df.interest_level.value_counts()
 x = interest_cat.index
@@ -223,32 +208,29 @@ plt.xlabel("Interest Level")
 
 print(df.interest_level.value_counts())
 
-
-# ### EDA - Geospatial - MAKE MORE FANCY PLOTS WITH THIS - THIS ONE SUCKS
-
 # In[12]:
-
+#==============================================================================
+# EDA - Geospatial - MAKE MORE FANCY PLOTS WITH THIS - THIS ONE SUCKS
+#==============================================================================
 #position data: longitude/latitude
 
 sns.pairplot(df[['longitude', 'latitude', 'interest_level']], hue='interest_level')
 plt.ylabel('latitude')
 plt.xlabel('longitude')
 
-
-# ### EDA - bedrooms
-
 # In[13]:
-
+#==============================================================================
+# EDA - bedrooms
+#==============================================================================
 # bedrooms plot
-
 sns.countplot(x='bedrooms',hue='interest_level', data=df)
 plt.ylabel('Occurances')
 plt.xlabel('Number of bedrooms')
 
-
-# ### EDA - price
-
 # In[14]:
+#==============================================================================
+# EDA - price
+#==============================================================================
 
 sns.violinplot(x="interest_level", y="price", data=df, palette="PRGn", order=['low','medium','high'])
 sns.despine(offset=10, trim=True)
@@ -264,18 +246,16 @@ plt.title("Violin plot showing distribution of rental prices by interest level")
 print("Mean price per interest level \n", df[['price','interest_level']].groupby('interest_level').mean(), "\n")
 print("STD of price per interest level \n", df[['price','interest_level']].groupby('interest_level').std())
 
-
 # In[15]:
 
 sns.distplot(df.price[df.interest_level == 'low'], hist=False, label='low')
 sns.distplot(df.price[df.interest_level == 'medium'], hist=False, label='medium')
 sns.distplot(df.price[df.interest_level == 'high'], hist=False, label='high')
 
-
-# # OTHER NOTES - REMOVE AT SOME POINT
-
 # In[16]:
-
+#==============================================================================
+# OTHER NOTES - REMOVE AT SOME POINT
+#==============================================================================
 """
 Considerations with the data:
     imbalanced dataset (not many high interest apartments compared to the rest)
@@ -303,12 +283,10 @@ Additional features to create:
 Target:
     Interest Level
 """
-
-
-# # Modelling
-
 # In[17]:
-
+#==============================================================================
+# Modelling
+#==============================================================================
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_score as cv
 from sklearn.ensemble import RandomForestClassifier
@@ -317,10 +295,10 @@ from sklearn.metrics import log_loss
 from sklearn.model_selection import train_test_split
 from sklearn_pandas import DataFrameMapper
 
-
-# ### Splitting Dataset
-
 # In[18]:
+#==============================================================================
+# Splitting Dataset
+#==============================================================================
 
 # determine features to use for modelling prior to data split
 features_to_use = ['bathrooms','bedrooms','price', 'the_bronx', 'staten_island','manhattan','queens','brooklyn', 'num_of_photos']
@@ -337,7 +315,6 @@ X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test
 scaler = DataFrameMapper([(X_all.columns, StandardScaler())])
 #scaler = StandardScaler()
 
-
 # learn scale parameters from final training set and apply to training, val, and test sets
 
 X_train_scaled = scaler.fit_transform(X_train)
@@ -352,10 +329,10 @@ X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
 # some algorithms require dummy values for multiclass classification
 # target = pd.get_dummies(train.interest_level)
 
-
-# ### Baseline Model
-
 # In[19]:
+#==============================================================================
+# Baseline Model
+#==============================================================================
 
 # define model params
 model = RandomForestClassifier(n_estimators=100)
@@ -366,7 +343,6 @@ model.fit(X_train_scaled, y_train)
 # evaluation
 y_hat_train = model.predict(X_train_scaled)
 y_hat_val = model.predict(X_val_scaled)
-
 
 # confusion matrices - predicted class along the top, actual class down the side (low, medium, high)
 print("training confusion matrix \n", confusion_matrix(y_train, y_hat_train, labels=[0,1,2]), "\n")
@@ -379,19 +355,23 @@ y_hat_val = model.predict_proba(X_val_scaled)
 print("log loss - training:", log_loss(y_train, y_hat_train))
 print("log loss - validation:", log_loss(y_val, y_hat_val))
 
-
-# # Modelling TODO
-
 # In[20]:
+#==============================================================================
+# Modelling TODO
+#==============================================================================
 
 # feature importance measures
 
 #from sklearn.ensemble import ExtraTreesClassifier
 #clf = ExtraTreesClassifier()
 #clf = clf.fit(features, target)
+<<<<<<< HEAD
 #clf.feature_importances_
 
 
 # In[ ]:
 
 
+=======
+#clf.feature_importances_
+>>>>>>> origin/master
