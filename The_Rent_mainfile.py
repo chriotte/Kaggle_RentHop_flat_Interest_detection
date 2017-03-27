@@ -112,7 +112,6 @@ print("remove_outlier_prices removed",dataCount-newCount,"datapoints")
 
 print(newCount, "datapoints remaining")
 
-
 # In[6]:
 #==============================================================================
 # Price plotting
@@ -359,7 +358,6 @@ print("log loss - validation:", log_loss(y_val, y_hat_val))
 #==============================================================================
 # Modelling TODO
 #==============================================================================
-
 # feature importance measures
 
 #from sklearn.ensemble import ExtraTreesClassifier
