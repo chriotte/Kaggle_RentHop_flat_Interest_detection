@@ -185,7 +185,13 @@ def makeFreqDict(description):
             else:
                 wordFreqDict[word] = 1
 
+
 makeFreqDict(description)
+
+# In[]
+# Number of 'features' and length of description
+df['num_of_features'] = df.features.map(len)
+df['description_length'] = df.description.apply(lambda x: len(x.split(" ")))
 
 # In[]:
 # ### price per bedroom
@@ -301,6 +307,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import log_loss
 from sklearn.model_selection import train_test_split
 from sklearn_pandas import DataFrameMapper
+from sklearn.neural_network import MLPClassifier
 
 # In[18]:
 #==============================================================================
@@ -308,9 +315,16 @@ from sklearn_pandas import DataFrameMapper
 #==============================================================================
 
 # determine features to use for modelling prior to data split
-features_to_use = ['bathrooms','bedrooms','price'] # baseline
-# features_to_use = ['bathrooms','bedrooms','price', 'the_bronx', 'staten_island','manhattan','queens','brooklyn', 'num_of_photos', 'price_per_bedroom']
-# features_to_use = ['bathrooms','bedrooms','price', 'num_of_photos', 'price_per_bedroom']
+# features_to_use = ['bathrooms','bedrooms','price'] # baseline
+features_to_use = ['latitude','longitude','bathrooms','bedrooms',
+                   'price', 'the_bronx', 'staten_island','manhattan',
+                   'queens','brooklyn', 'num_of_photos', 'price_per_bedroom',
+                   'studio','description_length','num_of_features']
+
+features_to_use = ['bathrooms','bedrooms','price', 'num_of_photos',
+                   'price_per_bedroom', 'studio','description_length',
+                   'num_of_features']
+
 
 X_all = df[features_to_use]
 
@@ -336,8 +350,6 @@ X_train_df = pd.DataFrame(X_train_scaled, index=X_train.index, columns=X_train.c
 X_test_df = pd.DataFrame(X_test_scaled, index=X_test.index, columns=X_test.columns)
 X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
 
-# some algorithms require dummy values for multiclass classification
-# target = pd.get_dummies(train.interest_level)
 
 # In[19]:
 #==============================================================================
@@ -345,7 +357,8 @@ X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
 #==============================================================================
 
 # define model params
-model = RandomForestClassifier(n_estimators=10, random_state=1, class_weight = 'balanced') # baseline
+# model = RandomForestClassifier(n_estimators=1000, random_state=1, class_weight = 'balanced') # baseline
+model = MLPClassifier(solver = 'lbfgs', alpha = 1e-2, hidden_layer_sizes = (32,64), random_state=1)
 # model = LogisticRegression(class_weight = 'balanced')
 # train model
 model.fit(X_train_df, y_train)
