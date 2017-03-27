@@ -11,7 +11,8 @@ import matplotlib as mpl
 import numpy as np
 #get_ipython().magic('matplotlib inline')
 
-mpl.rc("savefig", dpi=100)      ## What is this doing?
+# alter dpi to change the figure resolution, 100ish for general use, 300 for report
+mpl.rc("savefig", dpi=100)
 
 # In[2]:
 #==============================================================================
@@ -37,16 +38,16 @@ df.describe()
 def price_percent_cut(df_NEW, col):
     price_low = np.percentile(df_NEW[col].values, 1)
     price_high = np.percentile(df_NEW[col].values, 99)
-    
+
     df_NEW = df_NEW.drop(df_NEW[df_NEW.col < price_low].index)
     df_NEW = df_NEW.drop(df_NEW[df_NEW.col > price_high].index)
-    
+
     return df_NEW
 
 # Datetime object and number of photos feature engineering
 def clean_preprocess(initial_df):
     # convert created column into datetime type
-    try:        
+    try:
         initial_df['DateTime'] = pd.to_datetime(initial_df.created)
         initial_df.drop('created', axis=1, inplace=True)
 
@@ -58,13 +59,13 @@ def clean_preprocess(initial_df):
 
 
 # Remove prices outside of defined range
-def remove_outlier_prices(df_NEW):    
+def remove_outlier_prices(df_NEW):
     df_NEW = df_NEW.drop(df_NEW[df_NEW.price < price_low].index)
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.price > price_high].index)    
+    df_NEW = df_NEW.drop(df_NEW[df_NEW.price > price_high].index)
     return df_NEW
 
 # Remove locations outside of New York
-def remove_nonNY_coords(df_NEW):    
+def remove_nonNY_coords(df_NEW):
     #Removing out of bounds longitude
     df_NEW = df_NEW.drop(df_NEW[df_NEW.longitude < long_low].index)
     df_NEW = df_NEW.drop(df_NEW[df_NEW.longitude > long_high].index)
@@ -144,10 +145,10 @@ queens        = [40.7282, -73.7949]
 brooklyn      = [40.6782, -73.9442]
 staten_island = [40.5795, -74.1502]
 
-borough_list = {'the_bronx': the_bronx, 
-                'manhattan': manhattan, 
-                'queens': queens, 
-                'brooklyn': brooklyn, 
+borough_list = {'the_bronx': the_bronx,
+                'manhattan': manhattan,
+                'queens': queens,
+                'brooklyn': brooklyn,
                 'staten_island': staten_island}
 
 def euclid_dist(x, lat, long):
@@ -156,14 +157,14 @@ def euclid_dist(x, lat, long):
 for key in borough_list:
     df[key] = df[['latitude','longitude']].apply(euclid_dist, args=(borough_list[key]), axis=1)
 
-
+# In[7]:
 # ### Description BoW - TO FINISH
 import nltk
 from nltk.stem import WordNetLemmatizer
 import re, html
 
 
-description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted" 
+description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
 
 wordFreqDict = {}
 tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
@@ -171,26 +172,32 @@ tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
 def makeFreqDict(description):
 # takes a string, splits it up and add the occurances of each word to the dictionary
     no_tags = tag_re.sub('', description)
-    description = html.escape(no_tags)   
+    description = html.escape(no_tags)
     words = nltk.tokenize.word_tokenize(description)
-    
+
     unimportant_words = [':', 'http', '.', ',', '?', '...', "'s", "n't", 'RT', ';', '&', ')', '``', 'u', '(', "''", '|',]
     for word in words:
         if word not in unimportant_words:
             word = WordNetLemmatizer().lemmatize(word)
-    
+
             if word in wordFreqDict:
                 wordFreqDict[word] += 1
             else:
                 wordFreqDict[word] = 1
-                        
+
 makeFreqDict(description)
 
-# In[10]:
-#==============================================================================
-# EDA - Column Headers
-#==============================================================================
-df.columns.tolist()
+# In[]:
+# ### price per bedroom
+
+# creating flag for bedrooms = 0 (studio)
+df['studio'] = df.bedrooms.apply(lambda x: 1 if x==0 else 0)
+
+# setting bedrooms/bathrooms = 0 to 1
+df.bedrooms[df.bedrooms == 0] = 1
+
+df['price_per_bedroom'] = df.price / df.bedrooms
+
 
 # In[11]:
 #==============================================================================
@@ -258,13 +265,13 @@ sns.distplot(df.price[df.interest_level == 'high'], hist=False, label='high')
 """
 Considerations with the data:
     imbalanced dataset (not many high interest apartments compared to the rest)
-    
+
 
 Plots to produce
     barplot of interest levels - done
     map of interest levels
     price map
-    
+
 
 Features to use
     bathrooms
@@ -288,6 +295,7 @@ Target:
 #==============================================================================
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_score as cv
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import log_loss
@@ -300,7 +308,10 @@ from sklearn_pandas import DataFrameMapper
 #==============================================================================
 
 # determine features to use for modelling prior to data split
-features_to_use = ['bathrooms','bedrooms','price', 'the_bronx', 'staten_island','manhattan','queens','brooklyn', 'num_of_photos']
+features_to_use = ['bathrooms','bedrooms','price'] # baseline
+# features_to_use = ['bathrooms','bedrooms','price', 'the_bronx', 'staten_island','manhattan','queens','brooklyn', 'num_of_photos', 'price_per_bedroom']
+# features_to_use = ['bathrooms','bedrooms','price', 'num_of_photos', 'price_per_bedroom']
+
 X_all = df[features_to_use]
 
 # convert target label into numerical (ordinal)
@@ -330,33 +341,81 @@ X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
 
 # In[19]:
 #==============================================================================
-# Baseline Model
+# Modeling and evaluation
 #==============================================================================
 
 # define model params
-model = RandomForestClassifier(n_estimators=100)
-
+model = RandomForestClassifier(n_estimators=10, random_state=1, class_weight = 'balanced') # baseline
+# model = LogisticRegression(class_weight = 'balanced')
 # train model
-model.fit(X_train_scaled, y_train)
+model.fit(X_train_df, y_train)
 
 # evaluation
-y_hat_train = model.predict(X_train_scaled)
-y_hat_val = model.predict(X_val_scaled)
+y_hat_train = model.predict(X_train_df)
+y_hat_val = model.predict(X_val_df)
+y_hat_test = model.predict(X_test_df)
 
 # confusion matrices - predicted class along the top, actual class down the side (low, medium, high)
 print("training confusion matrix \n", confusion_matrix(y_train, y_hat_train, labels=[0,1,2]), "\n")
 print("validation confusion matrix \n", confusion_matrix(y_val, y_hat_val, labels=[0,1,2]), "\n")
+print("test confusion matrix \n", confusion_matrix(y_test, y_hat_test, labels=[0,1,2]), "\n")
 
-y_hat_train = model.predict_proba(X_train_scaled)
-y_hat_val = model.predict_proba(X_val_scaled)
+y_hat_train_prob = model.predict_proba(X_train_df)
+y_hat_val_prob = model.predict_proba(X_val_df)
+y_hat_test_prob = model.predict_proba(X_test_df)
 
 # log loss evaluations for train, val
-print("log loss - training:", log_loss(y_train, y_hat_train))
-print("log loss - validation:", log_loss(y_val, y_hat_val))
+print("log loss - training:", log_loss(y_train, y_hat_train_prob))
+print("log loss - validation:", log_loss(y_val, y_hat_val_prob))
+print("log loss - test:", log_loss(y_test, y_hat_test_prob))
+
+# In[]
+#==============================================================================
+# Plot confusion matrix
+#==============================================================================
+import itertools
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+
+test_cm = confusion_matrix(y_test, y_hat_test, labels=[0,1,2])
+
+plot_confusion_matrix(test_cm, classes = ['low','medium','high'], normalize=False)
 
 # In[20]:
 #==============================================================================
-# Modelling TODO
+# feature importance - TODO
 #==============================================================================
 # feature importance measures
 
@@ -364,3 +423,7 @@ print("log loss - validation:", log_loss(y_val, y_hat_val))
 #clf = ExtraTreesClassifier()
 #clf = clf.fit(features, target)
 #clf.feature_importances_
+
+
+
+
