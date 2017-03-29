@@ -1,0 +1,7 @@
+.spyproject/codestyle.ini
+*.ini
+.spyproject/workspace.ini
+.spyproject/workspace.ini
+*.pyc
+peturTest.py
+.spyproject/workspace.ini

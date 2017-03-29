@@ -9,73 +9,31 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import preProcess as pre # Created a module for preprocessing
 #get_ipython().magic('matplotlib inline')
 
 # alter dpi to change the figure resolution, 100ish for general use, 300 for report
 mpl.rc("savefig", dpi=100)
 
-# In[2]:
-#==============================================================================
 # Read data and create dataframes
-#==============================================================================
 df = pd.read_json("train.json")
 
-#Create dataframes bsaed on interest levels
 df_low      = df.drop(df[df.interest_level != "low"].index)
 df_medium   = df.drop(df[df.interest_level != "medium"].index)
 df_high     = df.drop(df[df.interest_level != "high"].index)
 
 # In[3]:
-
 df.head(3)
-df.describe()
+#df.describe()
 
-# In[4]:
+# In[]
 #==============================================================================
-# Data Preprocessing and Feature Engineering
+# Download dataframe to excel for exploration
 #==============================================================================
-# cut data by 1st and 99th percentile
-def price_percent_cut(df_NEW, col):
-    price_low = np.percentile(df_NEW[col].values, 1)
-    price_high = np.percentile(df_NEW[col].values, 99)
+#df.to_excel("cleanData.xlsb")
+#df.to_csv("cleanData.csv")
 
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.col < price_low].index)
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.col > price_high].index)
-
-    return df_NEW
-
-# Datetime object and number of photos feature engineering
-def clean_preprocess(initial_df):
-    # convert created column into datetime type
-    try:
-        initial_df['DateTime'] = pd.to_datetime(initial_df.created)
-        initial_df.drop('created', axis=1, inplace=True)
-
-        # create feature for number of photos
-        initial_df['num_of_photos'] = initial_df.photos.map(len)
-    except:
-        print("Clean_Preprocessed function skipped as it can only be run once")
-    return initial_df
-
-
-# Remove prices outside of defined range
-def remove_outlier_prices(df_NEW):
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.price < price_low].index)
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.price > price_high].index)
-    return df_NEW
-
-# Remove locations outside of New York
-def remove_nonNY_coords(df_NEW):
-    #Removing out of bounds longitude
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.longitude < long_low].index)
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.longitude > long_high].index)
-
-    #Removing out of bounds latitude
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.latitude < lat_low].index)
-    df_NEW = df_NEW.drop(df_NEW[df_NEW.latitude > lat_high].index)
-
-    return df_NEW
-
+# In[]
 #==============================================================================
 # Control panel for price and location data
 #==============================================================================
@@ -89,6 +47,7 @@ long_low  = -74.1
 long_high = -73.6
 lat_low   =  35
 lat_high  =  41
+ny_boundaries = [long_low,long_high,lat_low,lat_high]
 
 # In[5]:
 #==============================================================================
@@ -97,17 +56,17 @@ lat_high  =  41
 dataCount = len(df)
 print(dataCount,"datapoints in dataset")
 
-df = clean_preprocess(df)
+df = pre.clean_preprocess(df)
 newCount= len(df)
 print("cleanPreprocess removed",dataCount-newCount,"datapoints")
 dataCount=newCount
 
-df = remove_nonNY_coords(df)
+df = pre.remove_nonNY_coords(df, ny_boundaries)
 newCount= len(df)
 print("remove_nonNY_coords removed",dataCount-newCount,"datapoints")
 dataCount=newCount
 
-df = remove_outlier_prices(df)
+df = pre.price_outliers(df, price_low, price_high)
 newCount= len(df)
 print("remove_outlier_prices removed",dataCount-newCount,"datapoints")
 
@@ -155,7 +114,18 @@ def euclid_dist(x, lat, long):
     return np.sqrt((x[0]-lat)**2 + (x[1]-long)**2)
 
 for key in borough_list:
-    df[key] = df[['latitude','longitude']].apply(euclid_dist, args=(borough_list[key]), axis=1)
+    df[key] = df[['latitude','longitude']].apply(euclid_dist, 
+                                                 args=(borough_list[key]), 
+                                                 axis=1)
+    
+    
+# In[]
+# Dictionary of unique buildingID's and their counts 
+buildingID_count = pre.buildingID_count(df)
+
+ratio = pre.buildingID_Interest_Ratio(df)
+
+        
 
 # In[7]:
 # ### Description BoW - TO FINISH
