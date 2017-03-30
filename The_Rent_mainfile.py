@@ -70,69 +70,6 @@ plt.title("Distribution with top 1% removed")
 plt.xlabel("Price")
 plt.ylabel("Count")
 plt.show()
-# In[7]:
-# ### Description BoW - TO FINISH
-import nltk
-from nltk.stem import WordNetLemmatizer
-import re, html
-
-description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
-
-wordFreqDict = {}
-tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
-
-def makeFreqDict(description):
-# takes a string, splits it up and add the occurances of each word to the dictionary
-    no_tags = tag_re.sub('', description)
-    description = html.escape(no_tags)
-    words = nltk.tokenize.word_tokenize(description)
-
-    unimportant_words = [':', 'http', '.', ',', '?', '...', "'s", "n't", 'RT', ';', '&', ')', '``', 'u', '(', "''", '|',]
-    for word in words:
-        if word not in unimportant_words:
-            word = WordNetLemmatizer().lemmatize(word)
-
-            if word in wordFreqDict:
-                wordFreqDict[word] += 1
-            else:
-                wordFreqDict[word] = 1
-
-
-#makeFreqDict(description)
-# In[]
-# Make a word cloud from features and description, the word cloud is made trhoug wordle.net 
-
-# Making strings a data for word cloud
-allFeaturewords = df['features']
-wordString = ""
-for wordlist in allFeaturewords:
-    for word in wordlist:
-      wordString+=(word + " ")
-      
-allDescriptionWords = df['description']
-descriptionString = ""
-for desc in allDescriptionWords:
-    if len(desc) > 3:
-        descriptionString+=(desc + " ")
-        #makeFreqDict(desc)
-
-no_tags = tag_re.sub('', descriptionString)
-descriptionString = html.escape(descriptionString)
-
-descWordsAndFreq = ""
-for key in wordFreqDict:
-    if len(key) > 3:
-        if wordFreqDict[key] > 10000:
-            if key != "kagglemanager":
-                for i in range(int((wordFreqDict[key]/100))):
-                    descWordsAndFreq += str(key) + " "
-print("Done with descWordsAndFreq")
-
-
-    
-
-
-#print(wordString)
 
 # In[]
 # Assess each brokers quality 
@@ -175,7 +112,35 @@ df["building_quality"] = ""
 df["mangager_quality"] = df[managerID].map(mangagerQuality)
 df["building_quality"] = df[buildingID].map(buildingQuality)
 
+# In[7]:
+# ### Description BoW - TO FINISH
+import nltk
+from nltk.stem import WordNetLemmatizer
+import re, html
 
+description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
+
+wordFreqDict = {}
+tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
+
+def makeFreqDict(description):
+# takes a string, splits it up and add the occurances of each word to the dictionary
+    no_tags = tag_re.sub('', description)
+    description = html.escape(no_tags)
+    words = nltk.tokenize.word_tokenize(description)
+
+    unimportant_words = [':', 'http', '.', ',', '?', '...', "'s", "n't", 'RT', ';', '&', ')', '``', 'u', '(', "''", '|',]
+    for word in words:
+        if word not in unimportant_words:
+            word = WordNetLemmatizer().lemmatize(word)
+
+            if word in wordFreqDict:
+                wordFreqDict[word] += 1
+            else:
+                wordFreqDict[word] = 1
+
+
+makeFreqDict(description)
 
 # In[]
 # Number of 'features' and length of description
