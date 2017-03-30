@@ -19,6 +19,9 @@ def newFeatures(initial_df):
     try:
         initial_df['DateTime'] = pd.to_datetime(initial_df.created)
         initial_df.drop('created', axis=1, inplace=True)
+        initial_df['day_created'] = initial_df.DateTime.map(lambda x: x.day)
+        initial_df['month_created'] = initial_df.DateTime.map(lambda x: x.month)
+        initial_df['year_created'] = initial_df.DateTime.map(lambda x: x.year)
 
         # create feature for number of photos, features and description length
         initial_df['num_of_photos'] = initial_df.photos.map(len)
