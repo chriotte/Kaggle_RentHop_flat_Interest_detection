@@ -72,102 +72,6 @@ plt.ylabel("Count")
 plt.show()
 
 # In[]
-# Assess each brokers quality 
-
-
-# 1 get each broker
-# 2 get number of listings that are high or medium
-# 3 percentage of listings 
-
-
-def makeFeatureQuality(strName):
-    QualityTemp = (df.groupby(strName)['interest_level'].apply(list)).to_dict()
-    
-    for key in QualityTemp:
-        qualList = QualityTemp[key]
-        listLength = len(qualList)
-        totalScore = 1
-        for item in qualList:
-            if item == "low":
-                item = 0
-            elif item == "medium":
-                item = 1
-            elif item == "high":
-                item = 1
-            else:
-                item = -99999
-            totalScore =+ item
-        totalScore = totalScore / listLength
-        QualityTemp[key] = [totalScore]
-    return QualityTemp
-
-# adding the new value to the dataframe
-managerID = 'manager_id'
-buildingID = 'building_id'
-mangagerQuality = makeFeatureQuality(managerID)
-buildingQuality = makeFeatureQuality(buildingID)
-
-df["mangager_quality"] = ""  
-df["building_quality"] = ""   
-df["mangager_quality"] = df[managerID].map(mangagerQuality)
-df["building_quality"] = df[buildingID].map(buildingQuality)
-
-# In[7]:
-# ### Description BoW - TO FINISH
-import nltk
-from nltk.stem import WordNetLemmatizer
-import re, html
-
-description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
-
-wordFreqDict = {}
-tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
-
-def makeFreqDict(description):
-# takes a string, splits it up and add the occurances of each word to the dictionary
-    no_tags = tag_re.sub('', description)
-    description = html.escape(no_tags)
-    words = nltk.tokenize.word_tokenize(description)
-
-    unimportant_words = [':', 'http', '.', ',', '?', '...', "'s", "n't", 'RT', ';', '&', ')', '``', 'u', '(', "''", '|',]
-    for word in words:
-        if word not in unimportant_words:
-            word = WordNetLemmatizer().lemmatize(word)
-
-            if word in wordFreqDict:
-                wordFreqDict[word] += 1
-            else:
-                wordFreqDict[word] = 1
-
-
-makeFreqDict(description)
-
-# In[]
-# Number of 'features' and length of description
-df['num_of_features'] = df.features.map(len)
-df['description_length'] = df.description.apply(lambda x: len(x.split(" ")))
-
-# In[]:
-# ### price per bedroom
-# creating flag for bedrooms = 0 (studio)
-df['studio'] = df.bedrooms.apply(lambda x: 1 if x==0 else 0)
-# setting bedrooms/bathrooms = 0 to 1
-df.bedrooms[df.bedrooms == 0] = 1
-df['price_per_bedroom'] = df.price / df.bedrooms
-# set bedrooms back to original value
-df.bedrooms[df.studio == 1] = 0
-
-# In[]
-df['day_created'] = df.DateTime.map(lambda x: x.day)
-df['month_created'] = df.DateTime.map(lambda x: x.month)
-df['year_created'] = df.DateTime.map(lambda x: x.year)
-
-
-# In[11]:
-#==============================================================================
-# EDA - General
-#==============================================================================
-
 # plot of interest levels
 interest_cat = df.interest_level.value_counts()
 x = interest_cat.index
@@ -253,6 +157,77 @@ Additional features to create:
 Target:
     Interest Level
 """
+## wordcloud stuff
+
+
+# In[]:
+# ### Description BoW - TO FINISH
+import nltk
+from nltk.stem import WordNetLemmatizer
+import re, html
+
+description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
+
+wordFreqDict = {}
+tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
+
+def makeFreqDict(description):
+# takes a string, splits it up and add the occurances of each word to the dictionary
+    no_tags = tag_re.sub('', description)
+    description = html.escape(no_tags)
+    words = nltk.tokenize.word_tokenize(description)
+
+    unimportant_words = [':', 'http', '.', ',', '?', '...', "'s", "n't", 'RT', ';', '&', ')', '``', 'u', '(', "''", '|',]
+    for word in words:
+        if word not in unimportant_words:
+            word = WordNetLemmatizer().lemmatize(word)
+
+            if word in wordFreqDict:
+                wordFreqDict[word] += 1
+            else:
+                wordFreqDict[word] = 1
+
+
+#makeFreqDict(description)
+# In[]
+# Make a word cloud from features and description, the word cloud is made trhoug wordle.net 
+
+# Making strings a data for word cloud
+allFeaturewords = df['features']
+wordString = ""
+for wordlist in allFeaturewords:
+    for word in wordlist:
+      wordString+=(word + " ")
+      
+allDescriptionWords = df['description']
+descriptionString = ""
+for desc in allDescriptionWords:
+    if len(desc) > 3:
+        descriptionString+=(desc + " ")
+        #makeFreqDict(desc)
+
+no_tags = tag_re.sub('', descriptionString)
+descriptionString = html.escape(descriptionString)
+
+descWordsAndFreq = ""
+for key in wordFreqDict:
+    if len(key) > 3:
+        if wordFreqDict[key] > 10000:
+            if key != "kagglemanager":
+                for i in range(int((wordFreqDict[key]/100))):
+                    descWordsAndFreq += str(key) + " "
+print("Done with descWordsAndFreq")
+
+
+    
+
+
+#print(wordString)
+
+
+
+
+
 # In[17]:
 #==============================================================================
 # Modelling
