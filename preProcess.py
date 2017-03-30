@@ -151,13 +151,15 @@ def main(df):
     # adding the buuilding and manager quality 
     managerID = 'manager_id'
     buildingID = 'building_id'
-    mangagerQuality = makeFeatureQuality(managerID,df)
+    managerQuality = makeFeatureQuality(managerID,df)
     buildingQuality = makeFeatureQuality(buildingID,df)
     
-    df["mangager_quality"] = ""  
+    df["manager_quality"] = ""  
     df["building_quality"] = ""   
-    df["mangager_quality"] = df[managerID].map(mangagerQuality)
+    df["manager_quality"] = df[managerID].map(managerQuality)
+    df["manager_quality"] = df.manager_quality.apply(lambda x: x[0])
     df["building_quality"] = df[buildingID].map(buildingQuality)
+    df["building_quality"] = df.building_quality.apply(lambda x: x[0])
     
 
     print("*********************")

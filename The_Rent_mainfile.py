@@ -10,13 +10,21 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import preProcess as pre # Created a module for preprocessing
+from sklearn.model_selection import train_test_split
 #get_ipython().magic('matplotlib inline')
 # alter dpi to change the figure resolution, 100ish for general use, 300 for report
 mpl.rc("savefig", dpi=100)
 
 # Read data, create dataframes and clean it
 df = pd.read_json("train.json")
-df = pre.main(df)
+
+target_conversion = {'low':0,'medium':1,'high':2}
+y_all = df.interest_level.map(target_conversion).values
+X_train, X_test, _, _ = train_test_split(df, y_all, test_size=0.1, random_state=0, stratify=y_all)
+
+X_train = pre.main(X_train, True)
+X_test = pre.main(X_test, False)
+
 
 #df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
 #==============================================================================
@@ -29,35 +37,6 @@ df = pre.main(df)
 #df_raw.to_csv("raw_data.csv")
 
 
-# In[7]:
-# ### Description BoW - TO FINISH
-import nltk
-from nltk.stem import WordNetLemmatizer
-import re, html
-
-description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
-
-wordFreqDict = {}
-tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
-
-def makeFreqDict(description):
-# takes a string, splits it up and add the occurances of each word to the dictionary
-    no_tags = tag_re.sub('', description)
-    description = html.escape(no_tags)
-    words = nltk.tokenize.word_tokenize(description)
-
-    unimportant_words = [':', 'http', '.', ',', '?', '...', "'s", "n't", 'RT', ';', '&', ')', '``', 'u', '(', "''", '|',]
-    for word in words:
-        if word not in unimportant_words:
-            word = WordNetLemmatizer().lemmatize(word)
-
-            if word in wordFreqDict:
-                wordFreqDict[word] += 1
-            else:
-                wordFreqDict[word] = 1
-
-
-makeFreqDict(description)
 
 # In[11]:
 #==============================================================================
@@ -74,8 +53,6 @@ plt.title("Distribution with top 1% removed")
 plt.xlabel("Price")
 plt.ylabel("Count")
 plt.show()
-
-
 
 # In[11]:
 #==============================================================================
@@ -199,23 +176,22 @@ from sklearn.ensemble import GradientBoostingClassifier
 # determine features to use for modelling prior to data split
 
 # baseline features
-features_to_use = ['bathrooms','bedrooms','price', 'longitude', 'latitude']
+#features_to_use = ['bathrooms','bedrooms','price', 'longitude', 'latitude']
 
 # final features
-# features_to_use = ['latitude','longitude','bathrooms','bedrooms',
-#                   'price', 'the_bronx', 'staten_island','manhattan',
-#                   'queens','brooklyn', 'num_of_photos', 'price_per_bedroom',
-#                   'studio','description_length','num_of_features',
-#                   'day_created','month_created']
+features_to_use = ['latitude','longitude','bathrooms','bedrooms',
+                   'price', 'the_bronx', 'staten_island','manhattan',
+                   'queens','brooklyn', 'num_of_photos', 'price_per_bedroom',
+                   'studio','description_length','num_of_features',
+                   'day_created','month_created', 'manager_quality', 'building_quality']
 
 
 X_all = df[features_to_use]
 
 # convert target label into numerical (ordinal)
-target_conversion = {'low':0,'medium':1,'high':2}
-y_all = df.interest_level.map(target_conversion).values
 
-X_train_val, X_test, y_train_val, y_test = train_test_split(X_all, y_all, test_size=0.1, random_state=0, stratify=y_all)
+
+
 X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.1, random_state=0, stratify=y_train_val)
 
 # mapping scaler to keep dataset in a dataframe (cannot do inverse using this function)
@@ -223,12 +199,11 @@ scaler = DataFrameMapper([(X_all.columns, StandardScaler())])
 #scaler = StandardScaler()
 
 # learn scale parameters from final training set and apply to training, val, and test sets
-
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 X_val_scaled = scaler.transform(X_val)
 
-
+# turn numpy arrays back to pandas dataframes (retaining column names)
 X_train_df = pd.DataFrame(X_train_scaled, index=X_train.index, columns=X_train.columns)
 X_test_df = pd.DataFrame(X_test_scaled, index=X_test.index, columns=X_test.columns)
 X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
@@ -241,9 +216,9 @@ X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
 
 # define model params
 # model = RandomForestClassifier(n_estimators=1000, random_state=1, class_weight = 'balanced') # baseline
-# model = MLPClassifier(solver = 'lbfgs', alpha = 1e-2, hidden_layer_sizes = (32,64), random_state=1,)
+model = MLPClassifier(solver = 'lbfgs', alpha = 1e-6, hidden_layer_sizes = (10,30,5), random_state=1,activation='tanh')
 # model = GradientBoostingClassifier(n_estimators=1000, random_state=1)
-model = LogisticRegression(class_weight = 'balanced')
+#model = LogisticRegression(class_weight = 'balanced')
 # train model
 model.fit(X_train_df, y_train)
 
@@ -267,6 +242,24 @@ print("log loss - validation:", log_loss(y_val, y_hat_val_prob))
 print("log loss - test:", log_loss(y_test, y_hat_test_prob))
 
 print(classification_report(y_test, y_hat_test))
+
+# In[20]:
+#==============================================================================
+# feature importance
+#==============================================================================
+
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.feature_selection import SelectFromModel
+clf = ExtraTreesClassifier(n_estimators=250, random_state = 0)
+clf = clf.fit(X_train_df, y_train)
+
+features = pd.DataFrame()
+features['feature'] = X_train_df.columns
+features['importance'] = clf.feature_importances_
+
+features.sort(['importance'],ascending=False)
+
+sns.barplot(y = 'feature', x = 'importance', data=features.sort_values(by='importance', ascending=False))
 
 # In[]
 #==============================================================================
@@ -312,24 +305,7 @@ test_cm = confusion_matrix(y_val, y_hat_val, labels=[0,1,2])
 
 plot_confusion_matrix(test_cm, classes = ['low','medium','high'], normalize=False)
 
-# In[20]:
-#==============================================================================
-# feature importance - TODO
-#==============================================================================
-# feature importance measures
 
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.feature_selection import SelectFromModel
-clf = ExtraTreesClassifier(n_estimators=250, random_state = 0)
-clf = clf.fit(X_train_df, y_train)
-
-features = pd.DataFrame()
-features['feature'] = X_train_df.columns
-features['importance'] = clf.feature_importances_
-
-features.sort(['importance'],ascending=False)
-
-sns.barplot(y = 'feature', x = 'importance', data=features.sort_values(by='importance', ascending=False))
 
 # In[]
 # hyperparam optimisation for random forest
