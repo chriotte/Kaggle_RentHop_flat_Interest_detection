@@ -149,7 +149,7 @@ def makeFeatureQuality(strName):
         QualityTemp[key] = [totalScore]
     return QualityTemp
 
-# adding the new value to the datafram
+# adding the new value to the dataframe
 managerID = 'manager_id'
 buildingID = 'building_id'
 mangagerQuality = makeFeatureQuality(managerID)
