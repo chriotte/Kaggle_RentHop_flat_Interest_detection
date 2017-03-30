@@ -28,6 +28,7 @@ X_test = pre.main(X_test, False)
 managerID = 'manager_id'
 buildingID = 'building_id'
 
+# Feature creation for testing sensitive features
 X_test["manager_quality"] = X_test[managerID].map(managerQuality)
 X_test.manager_quality.fillna(0,inplace=True)
 X_test["manager_quality"] = X_test.manager_quality.apply(lambda x: x[0] if x != 0 else 0)
@@ -166,6 +167,7 @@ Target:
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_score as cv
 from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegressionCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import log_loss
@@ -188,9 +190,10 @@ from sklearn.ensemble import GradientBoostingClassifier
 #features_to_use = ['bathrooms','bedrooms','price', 'longitude', 'latitude']
 
 # final features
-features_to_use = ['latitude','longitude','bathrooms','bedrooms',
-                   'price', 'the_bronx', 'staten_island','manhattan',
-                   'queens','brooklyn', 'num_of_photos', 'price_per_bedroom',
+features_to_use = ['latitude','longitude','bathrooms','bedrooms','price', 
+                   #'the_bronx', 'staten_island','manhattan','queens','brooklyn',
+                   'log_price', 'price_sq', 
+                   'num_of_photos', 'price_per_bedroom',
                    'studio','description_length','num_of_features',
                    'day_created','month_created', 'manager_quality', 'building_quality',
                    'hour_created', 'day_of_week_created']
@@ -203,21 +206,21 @@ target_conversion = {'low':0,'medium':1,'high':2}
 y_train = X_train.interest_level.map(target_conversion).values
 y_test = X_test.interest_level.map(target_conversion).values
 
-X_train = X_train[features_to_use]
-X_test = X_test[features_to_use]
+X_train_cut = X_train[features_to_use]
+X_test_cut = X_test[features_to_use]
 
 
 # mapping scaler to keep dataset in a dataframe (cannot do inverse using this function)
-scaler = DataFrameMapper([(X_train.columns, StandardScaler())])
+scaler = DataFrameMapper([(X_train_cut.columns, StandardScaler())])
 #scaler = StandardScaler()
 
 # learn scale parameters from final training set and apply to training, val, and test sets
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+X_train_scaled = scaler.fit_transform(X_train_cut)
+X_test_scaled = scaler.transform(X_test_cut)
 
 # turn numpy arrays back to pandas dataframes (retaining column names)
-X_train_df = pd.DataFrame(X_train_scaled, index=X_train.index, columns=X_train.columns)
-X_test_df = pd.DataFrame(X_test_scaled, index=X_test.index, columns=X_test.columns)
+X_train_df = pd.DataFrame(X_train_scaled, index=X_train_cut.index, columns=X_train_cut.columns)
+X_test_df = pd.DataFrame(X_test_scaled, index=X_test_cut.index, columns=X_test_cut.columns)
 
 
 # In[19]:
@@ -227,9 +230,10 @@ X_test_df = pd.DataFrame(X_test_scaled, index=X_test.index, columns=X_test.colum
 
 # define model params
 # model = RandomForestClassifier(n_estimators=1000, random_state=1, class_weight = 'balanced') # baseline
-model = MLPClassifier(solver = 'lbfgs', alpha = 1e-6, hidden_layer_sizes = (10,30,5), random_state=1,activation='tanh')
+#model = MLPClassifier(solver = 'lbfgs', alpha = 1e-6, hidden_layer_sizes = (10,30,5), random_state=1,activation='tanh')
 # model = GradientBoostingClassifier(n_estimators=1000, random_state=1)
-#model = LogisticRegression(class_weight = 'balanced')
+model = LogisticRegressionCV(class_weight='balanced', random_state=1)
+#model = LogisticRegression(class_weight = 'balanced', random_state=1)
 # train model
 model.fit(X_train_df, y_train)
 
@@ -257,7 +261,7 @@ print(classification_report(y_test, y_hat_test))
 
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import SelectFromModel
-clf = ExtraTreesClassifier(n_estimators=250, random_state = 0)
+clf = ExtraTreesClassifier(n_estimators=1000, random_state = 0)
 clf = clf.fit(X_train_df, y_train)
 
 features = pd.DataFrame()
@@ -350,19 +354,5 @@ gs_nn.fit(X_train_df, y_train)
 print('- Best score: %.4f' % gs_nn.best_score_)
 print('- Best params: %s' % gs_nn.best_params_)
 
+
 # In[]
-# hyperparam optimisation for logistic regression
-clf_log = LogisticRegression(verbose=1, class_weight = 'balanced', random_state=1)
-
-parameter_grid = {
-                 'C' : [1, 0.1, 0.001]
-                 }
-
-cross_validation = StratifiedKFold(n_splits=3)
-cross_validation.get_n_splits(X_train_df, y_train)
-
-grid_search = GridSearchCV(clf_log, param_grid=parameter_grid, cv=cross_validation, n_jobs=-1, scoring='neg_log_loss')
-grid_search.fit(X_train_df, y_train)
-
-print('Best score: {}'.format(grid_search.best_score_))
-print('Best parameters: {}'.format(grid_search.best_params_))

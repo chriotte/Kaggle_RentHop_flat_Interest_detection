@@ -30,6 +30,9 @@ def newFeatures(initial_df):
         initial_df['num_of_features'] = initial_df.features.map(len)
         initial_df['description_length'] = initial_df.description.apply(lambda x: len(x.split(" ")))
         
+        initial_df['log_price'] = initial_df.price.map(np.log)
+        initial_df['price_sq'] = initial_df.price.map(np.square)
+        
         # price per bedroom
         # creating flag for bedrooms = 0 (studio)
         initial_df['studio'] = initial_df.bedrooms.apply(lambda x: 1 if x==0 else 0)
