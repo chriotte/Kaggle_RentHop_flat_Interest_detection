@@ -29,9 +29,11 @@ managerID = 'manager_id'
 buildingID = 'building_id'
 
 X_test["manager_quality"] = X_test[managerID].map(managerQuality)
-#X_test["manager_quality"] = X_test.manager_quality.apply(lambda x: x[0])
+X_test.manager_quality.fillna(0,inplace=True)
+X_test["manager_quality"] = X_test.manager_quality.apply(lambda x: x[0] if x != 0 else 0)
 X_test["building_quality"] = X_test[buildingID].map(buildingQuality)
-#X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0]) 
+X_test.building_quality.fillna(0,inplace=True)
+X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0] if x != 0 else 0) 
 
 #df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
 #==============================================================================
@@ -190,7 +192,8 @@ features_to_use = ['latitude','longitude','bathrooms','bedrooms',
                    'price', 'the_bronx', 'staten_island','manhattan',
                    'queens','brooklyn', 'num_of_photos', 'price_per_bedroom',
                    'studio','description_length','num_of_features',
-                   'day_created','month_created', 'manager_quality', 'building_quality']
+                   'day_created','month_created', 'manager_quality', 'building_quality',
+                   'hour_created', 'day_of_week_created']
 
 
 
@@ -205,7 +208,7 @@ X_test = X_test[features_to_use]
 
 
 # mapping scaler to keep dataset in a dataframe (cannot do inverse using this function)
-scaler = DataFrameMapper([(X_all.columns, StandardScaler())])
+scaler = DataFrameMapper([(X_train.columns, StandardScaler())])
 #scaler = StandardScaler()
 
 # learn scale parameters from final training set and apply to training, val, and test sets
@@ -232,21 +235,17 @@ model.fit(X_train_df, y_train)
 
 # evaluation
 y_hat_train = model.predict(X_train_df)
-y_hat_val = model.predict(X_val_df)
 y_hat_test = model.predict(X_test_df)
 
 # confusion matrices - predicted class along the top, actual class down the side (low, medium, high)
 print("training confusion matrix \n", confusion_matrix(y_train, y_hat_train, labels=[0,1,2]), "\n")
-print("validation confusion matrix \n", confusion_matrix(y_val, y_hat_val, labels=[0,1,2]), "\n")
 print("test confusion matrix \n", confusion_matrix(y_test, y_hat_test, labels=[0,1,2]), "\n")
 
 y_hat_train_prob = model.predict_proba(X_train_df)
-y_hat_val_prob = model.predict_proba(X_val_df)
 y_hat_test_prob = model.predict_proba(X_test_df)
 
 # log loss evaluations for train, val
 print("log loss - training:", log_loss(y_train, y_hat_train_prob))
-print("log loss - validation:", log_loss(y_val, y_hat_val_prob))
 print("log loss - test:", log_loss(y_test, y_hat_test_prob))
 
 print(classification_report(y_test, y_hat_test))

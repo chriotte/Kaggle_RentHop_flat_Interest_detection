@@ -22,6 +22,8 @@ def newFeatures(initial_df):
         initial_df['day_created'] = initial_df.DateTime.map(lambda x: x.day)
         initial_df['month_created'] = initial_df.DateTime.map(lambda x: x.month)
         initial_df['year_created'] = initial_df.DateTime.map(lambda x: x.year)
+        initial_df['hour_created'] = initial_df.DateTime.map(lambda x: x.hour)
+        initial_df['day_of_week_created'] = initial_df.DateTime.map(lambda x: x.dayofweek)
 
         # create feature for number of photos, features and description length
         initial_df['num_of_photos'] = initial_df.photos.map(len)
