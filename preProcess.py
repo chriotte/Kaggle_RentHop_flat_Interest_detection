@@ -108,7 +108,9 @@ def makeFeatureQuality(strName,df):
         QualityTemp[key] = [totalScore]
     return QualityTemp
 
-def main(df):
+
+
+def main(df,train):
 #==============================================================================
 # Control panel for price and location data
 #==============================================================================
@@ -130,41 +132,48 @@ def main(df):
 
     df = newFeatures(df)
     print("")
+    print("Running set:", train)
     print("Datapoints:",dataCount)
     print("Features",len(df.columns))
     newCount = len(df)
     dataCount=newCount
     
-    df = remove_nonNY_coords(df, ny_boundaries)
+    if train:
+        df = remove_nonNY_coords(df, ny_boundaries)
     newCount= len(df)
     print(dataCount-newCount,"rentals outside NY removed")
     dataCount=newCount
-    
-    df = price_outliers(df, price_low, price_high)
+
+    if train:
+        df = price_outliers(df, price_low, price_high)
     newCount= len(df)
     print(dataCount-newCount,"datapoints outside price range")
-    
-    
-    
+
     df = boroughs(df)
     
     # adding the buuilding and manager quality 
-    managerID = 'manager_id'
-    buildingID = 'building_id'
-    managerQuality = makeFeatureQuality(managerID,df)
-    buildingQuality = makeFeatureQuality(buildingID,df)
+    managerQuality = 0
+    buildingQuality = 0
     
-    df["manager_quality"] = ""  
-    df["building_quality"] = ""   
-    df["manager_quality"] = df[managerID].map(managerQuality)
-    df["manager_quality"] = df.manager_quality.apply(lambda x: x[0])
-    df["building_quality"] = df[buildingID].map(buildingQuality)
-    df["building_quality"] = df.building_quality.apply(lambda x: x[0])
-    
+    if train:
+        managerID = 'manager_id'
+        buildingID = 'building_id'
+        managerQuality = makeFeatureQuality(managerID,df)
+        buildingQuality = makeFeatureQuality(buildingID,df)
+        
+#        df["manager_quality"] = ""  
+#        df["building_quality"] = ""   
+        df["manager_quality"] = df[managerID].map(managerQuality)
+        df["manager_quality"] = df.manager_quality.apply(lambda x: x[0])
+        df["building_quality"] = df[buildingID].map(buildingQuality)
+        df["building_quality"] = df.building_quality.apply(lambda x: x[0])    
 
     print("*********************")
     print("Preprocessing DONE...")
     print("Datapoints:",len(df))
     print("Features",len(df.columns))
-
-    return df
+    
+    if train:
+        return df, managerQuality, buildingQuality
+    else:
+        return df

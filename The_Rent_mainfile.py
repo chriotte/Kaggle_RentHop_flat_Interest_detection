@@ -22,9 +22,17 @@ target_conversion = {'low':0,'medium':1,'high':2}
 y_all = df.interest_level.map(target_conversion).values
 X_train, X_test, _, _ = train_test_split(df, y_all, test_size=0.1, random_state=0, stratify=y_all)
 
-X_train = pre.main(X_train, True)
+X_train, managerQuality, buildingQuality = pre.main(X_train, True)
 X_test = pre.main(X_test, False)
 
+managerID = 'manager_id'
+buildingID = 'building_id'
+
+X_test["manager_quality"] = X_test[managerID].map(managerQuality)
+#X_test["manager_quality"] = X_test.manager_quality.apply(lambda x: x[0])
+X_test["building_quality"] = X_test[buildingID].map(buildingQuality)
+#X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0]) 
+    
 
 #df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
 #==============================================================================
