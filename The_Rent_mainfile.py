@@ -22,17 +22,9 @@ target_conversion = {'low':0,'medium':1,'high':2}
 y_all = df.interest_level.map(target_conversion).values
 X_train, X_test, _, _ = train_test_split(df, y_all, test_size=0.1, random_state=0, stratify=y_all)
 
-X_train, managerQuality, buildingQuality = pre.main(X_train, True)
+X_train = pre.main(X_train, True)
 X_test = pre.main(X_test, False)
 
-managerID = 'manager_id'
-buildingID = 'building_id'
-
-X_test["manager_quality"] = X_test[managerID].map(managerQuality)
-#X_test["manager_quality"] = X_test.manager_quality.apply(lambda x: x[0])
-X_test["building_quality"] = X_test[buildingID].map(buildingQuality)
-#X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0]) 
-    
 
 #df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
 #==============================================================================
@@ -194,13 +186,16 @@ features_to_use = ['latitude','longitude','bathrooms','bedrooms',
                    'day_created','month_created', 'manager_quality', 'building_quality']
 
 
-X_all = df[features_to_use]
+
 
 # convert target label into numerical (ordinal)
+target_conversion = {'low':0,'medium':1,'high':2}
+y_train = X_train.interest_level.map(target_conversion).values
+y_test = X_test.interest_level.map(target_conversion).values
 
+X_train = X_train[features_to_use]
+X_test = X_test[features_to_use]
 
-
-X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.1, random_state=0, stratify=y_train_val)
 
 # mapping scaler to keep dataset in a dataframe (cannot do inverse using this function)
 scaler = DataFrameMapper([(X_all.columns, StandardScaler())])
@@ -209,12 +204,10 @@ scaler = DataFrameMapper([(X_all.columns, StandardScaler())])
 # learn scale parameters from final training set and apply to training, val, and test sets
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
-X_val_scaled = scaler.transform(X_val)
 
 # turn numpy arrays back to pandas dataframes (retaining column names)
 X_train_df = pd.DataFrame(X_train_scaled, index=X_train.index, columns=X_train.columns)
 X_test_df = pd.DataFrame(X_test_scaled, index=X_test.index, columns=X_test.columns)
-X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
 
 
 # In[19]:
