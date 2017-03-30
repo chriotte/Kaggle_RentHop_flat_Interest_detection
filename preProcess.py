@@ -68,7 +68,6 @@ def buildingID_Interest_count(buildingID_interest, label):
 
 def buildingID_Interest_Ratio(df):
     id_ratio= {}
-    
     uniqueID = df.building_id.unique()
     count = buildingID_count(df)
     id_interest     = buildingID_interest(df)
@@ -77,6 +76,43 @@ def buildingID_Interest_Ratio(df):
     for items in uniqueID:
         ratio = id_interest_low[items] / count[items]
         id_ratio[items] = ratio
-        
-    return id_ratio 
     
+    return id_ratio
+
+def main(df):
+#==============================================================================
+# Control panel for price and location data
+#==============================================================================
+    #price_low = 1000
+    #price_high = 10000
+    price_low = np.percentile(df['price'].values, 0.5)
+    price_high = np.percentile(df['price'].values, 99.5)
+    
+    # Define upper and lower limits for NewYork
+    long_low  = -74.1
+    long_high = -73.6
+    lat_low   =  35
+    lat_high  =  41
+    ny_boundaries = [long_low,long_high,lat_low,lat_high]
+#==============================================================================
+# Clean data and show how many rows of data are removed at each step
+#==============================================================================
+    dataCount = len(df)
+    print(dataCount,"datapoints in dataset")
+    
+    df = clean_preprocess(df)
+    newCount= len(df)
+    print("cleanPreprocess removed",dataCount-newCount,"datapoints")
+    dataCount=newCount
+    
+    df = remove_nonNY_coords(df, ny_boundaries)
+    newCount= len(df)
+    print("remove_nonNY_coords removed",dataCount-newCount,"datapoints")
+    dataCount=newCount
+    
+    df = price_outliers(df, price_low, price_high)
+    newCount= len(df)
+    print("remove_outlier_prices removed",dataCount-newCount,"datapoints")
+    
+    print(newCount, "datapoints remaining")
+    return df

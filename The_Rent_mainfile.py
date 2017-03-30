@@ -10,23 +10,23 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import preProcess as pre # Created a module for preprocessing
+
 #get_ipython().magic('matplotlib inline')
 
 # alter dpi to change the figure resolution, 100ish for general use, 300 for report
 mpl.rc("savefig", dpi=100)
 
 # Read data and create dataframes
-df = pd.read_json("train.json")
+df_raw = pd.read_json("train.json")
 
-df_low      = df.drop(df[df.interest_level != "low"].index)
-df_medium   = df.drop(df[df.interest_level != "medium"].index)
-df_high     = df.drop(df[df.interest_level != "high"].index)
+df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
+df_medium   = df_raw.drop(df_raw[df_raw.interest_level != "medium"].index)
+df_high     = df_raw.drop(df_raw[df_raw.interest_level != "high"].index)
 
 # In[3]:
-df.head(3)
+df_raw.head(3)
 #df.describe()
 
-# In[]
 #==============================================================================
 # Download dataframe to excel for exploration
 #==============================================================================
@@ -35,42 +35,9 @@ df.head(3)
 
 # In[]
 #==============================================================================
-# Control panel for price and location data
+#  Clean and preprocess
 #==============================================================================
-price_low = 1000
-#price_high = 10000
-#price_low = np.percentile(df['price'].values, 0.5)
-price_high = np.percentile(df['price'].values, 99)
-
-# Define upper and lower limits for NewYork
-long_low  = -74.1
-long_high = -73.6
-lat_low   =  35
-lat_high  =  41
-ny_boundaries = [long_low,long_high,lat_low,lat_high]
-
-# In[5]:
-#==============================================================================
-# Clean data and show how many rows of data are removed at each step
-#==============================================================================
-dataCount = len(df)
-print(dataCount,"datapoints in dataset")
-
-df = pre.clean_preprocess(df)
-newCount= len(df)
-print("cleanPreprocess removed",dataCount-newCount,"datapoints")
-dataCount=newCount
-
-df = pre.remove_nonNY_coords(df, ny_boundaries)
-newCount= len(df)
-print("remove_nonNY_coords removed",dataCount-newCount,"datapoints")
-dataCount=newCount
-
-df = pre.price_outliers(df, price_low, price_high)
-newCount= len(df)
-print("remove_outlier_prices removed",dataCount-newCount,"datapoints")
-
-print(newCount, "datapoints remaining")
+df = pre.main(df_raw)
 
 # In[6]:
 #==============================================================================
@@ -117,15 +84,11 @@ for key in borough_list:
     df[key] = df[['latitude','longitude']].apply(euclid_dist, 
                                                  args=(borough_list[key]), 
                                                  axis=1)
-    
-    
 # In[]
 # Dictionary of unique buildingID's and their counts 
 buildingID_count = pre.buildingID_count(df)
 
 ratio = pre.buildingID_Interest_Ratio(df)
-
-        
 
 # In[7]:
 # ### Description BoW - TO FINISH
@@ -165,7 +128,6 @@ df['description_length'] = df.description.apply(lambda x: len(x.split(" ")))
 
 # In[]:
 # ### price per bedroom
-
 # creating flag for bedrooms = 0 (studio)
 df['studio'] = df.bedrooms.apply(lambda x: 1 if x==0 else 0)
 
