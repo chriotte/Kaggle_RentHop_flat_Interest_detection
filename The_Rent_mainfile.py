@@ -128,37 +128,37 @@ for key in borough_list:
 # 3 percentage of listings 
 
 
-mangagerQualityTemp = (df.groupby('manager_id')['interest_level'].apply(list)).to_dict()
-
-for key in mangagerQualityTemp:
-    qualList = mangagerQualityTemp[key]
-    listLength = len(qualList)
-    totalScore = 1
-    for item in qualList:
-        if item == "low":
-            item = 0
-        elif item == "medium":
-            item = 1
-        elif item == "high":
-            item = 1
-        else:
-            item = -99999
-        totalScore =+ item
-    totalScore = totalScore / listLength
-    mangagerQualityTemp[key] = [totalScore, listLength]
+def makeFeatureQuality(strName):
+    QualityTemp = (df.groupby(strName)['interest_level'].apply(list)).to_dict()
+    
+    for key in QualityTemp:
+        qualList = QualityTemp[key]
+        listLength = len(qualList)
+        totalScore = 1
+        for item in qualList:
+            if item == "low":
+                item = 0
+            elif item == "medium":
+                item = 1
+            elif item == "high":
+                item = 1
+            else:
+                item = -99999
+            totalScore =+ item
+        totalScore = totalScore / listLength
+        QualityTemp[key] = [totalScore]
+    return QualityTemp
 
 # adding the new value to the datafram
+managerID = 'manager_id'
+buildingID = 'building_id'
+mangagerQuality = makeFeatureQuality(managerID)
+buildingQuality = makeFeatureQuality(buildingID)
 
-df["mangager_quality"] = ""
-
-for index, row in df.iterrows():
-    for manager in mangagerQualityTemp:
-        if row["manager_id"] == manager:
-            df["mangager_quality"] = mangagerQualityTemp[manager][0]
-            print(df["mangager_quality"])
-            break;
-    
-    
+df["mangager_quality"] = ""  
+df["building_quality"] = ""   
+df["mangager_quality"] = df[managerID].map(mangagerQuality)
+df["building_quality"] = df[buildingID].map(buildingQuality)
 
         
 
