@@ -10,84 +10,24 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import preProcess as pre # Created a module for preprocessing
-
 #get_ipython().magic('matplotlib inline')
-
 # alter dpi to change the figure resolution, 100ish for general use, 300 for report
 mpl.rc("savefig", dpi=100)
 
 # Read data, create dataframes and clean it
-df_raw = pd.read_json("train.json")
-df = pre.main(df_raw)
+df = pd.read_json("train.json")
+df = pre.main(df)
 
 #df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
-# In[3]:
 #==============================================================================
 # Download dataframe to excel for exploration
 #==============================================================================
 #df.to_excel("cleanData.xlsb")
 #df.to_csv("cleanData.csv")
 
-# In[6]:
-#==============================================================================
-# Price plotting
-#==============================================================================
-plt.hist(df['price'], 100)
-plt.title("Distribution with top 1% removed")
-plt.xlabel("Price")
-plt.ylabel("Count")
-plt.show()
+#df_raw.to_excel("raw_data.xlsb")
+#df_raw.to_csv("raw_data.csv")
 
-# In[]:
-#==============================================================================
-# Location plotting
-#==============================================================================
-plt.hist(df['price'], 100)
-plt.title("Distribution with top 1% removed")
-plt.xlabel("Price")
-plt.ylabel("Count")
-plt.show()
-
-# In[]
-# Assess each brokers quality 
-
-
-# 1 get each broker
-# 2 get number of listings that are high or medium
-# 3 percentage of listings 
-
-
-def makeFeatureQuality(strName):
-    QualityTemp = (df.groupby(strName)['interest_level'].apply(list)).to_dict()
-    
-    for key in QualityTemp:
-        qualList = QualityTemp[key]
-        listLength = len(qualList)
-        totalScore = 1
-        for item in qualList:
-            if item == "low":
-                item = 0
-            elif item == "medium":
-                item = 1
-            elif item == "high":
-                item = 1
-            else:
-                item = -99999
-            totalScore =+ item
-        totalScore = totalScore / listLength
-        QualityTemp[key] = [totalScore]
-    return QualityTemp
-
-# adding the new value to the dataframe
-managerID = 'manager_id'
-buildingID = 'building_id'
-mangagerQuality = makeFeatureQuality(managerID)
-buildingQuality = makeFeatureQuality(buildingID)
-
-df["mangager_quality"] = ""  
-df["building_quality"] = ""   
-df["mangager_quality"] = df[managerID].map(mangagerQuality)
-df["building_quality"] = df[buildingID].map(buildingQuality)
 
 # In[7]:
 # ### Description BoW - TO FINISH
@@ -119,26 +59,33 @@ def makeFreqDict(description):
 
 makeFreqDict(description)
 
-# In[]
-# Number of 'features' and length of description
-df['num_of_features'] = df.features.map(len)
-df['description_length'] = df.description.apply(lambda x: len(x.split(" ")))
-
-# In[]:
-# ### price per bedroom
-# creating flag for bedrooms = 0 (studio)
-df['studio'] = df.bedrooms.apply(lambda x: 1 if x==0 else 0)
-
-# setting bedrooms/bathrooms = 0 to 1
-df.bedrooms[df.bedrooms == 0] = 1
-
-df['price_per_bedroom'] = df.price / df.bedrooms
-
-
 # In[11]:
 #==============================================================================
-# EDA - General
 #==============================================================================
+#==============================================================================
+# # #                              EDA - General
+#==============================================================================
+#==============================================================================
+#==============================================================================
+# Price plotting
+#==============================================================================
+plt.hist(df['price'], 100)
+plt.title("Distribution with top 1% removed")
+plt.xlabel("Price")
+plt.ylabel("Count")
+plt.show()
+
+# In[]:
+#==============================================================================
+# Location plotting
+#==============================================================================
+plt.hist(df['price'], 100)
+plt.title("Distribution with top 1% removed")
+plt.xlabel("Price")
+plt.ylabel("Count")
+plt.show()
+
+# In[]
 # plot of interest levels
 interest_cat = df.interest_level.value_counts()
 x = interest_cat.index
@@ -155,7 +102,6 @@ print(df.interest_level.value_counts())
 # EDA - Geospatial - MAKE MORE FANCY PLOTS WITH THIS - THIS ONE SUCKS
 #==============================================================================
 #position data: longitude/latitude
-
 sns.pairplot(df[['longitude', 'latitude', 'interest_level']], hue='interest_level')
 plt.ylabel('latitude')
 plt.xlabel('longitude')

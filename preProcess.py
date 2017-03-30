@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
-import collections
 
 def price_percent_cut(df_NEW, col):
+    print("    Cutting out 1% of the data")
     price_low = np.percentile(df_NEW[col].values, 1)
     price_high = np.percentile(df_NEW[col].values, 99)
-
+    
     df_NEW = df_NEW.drop(df_NEW[df_NEW.col < price_low].index)
     df_NEW = df_NEW.drop(df_NEW[df_NEW.col > price_high].index)
 
     return df_NEW
 
 # Datetime object and number of photos feature engineering
-def clean_preprocess(initial_df):
+def newFeatures(initial_df):
     # convert created column into datetime type
+    print("    Creating new features")
     try:
         initial_df['DateTime'] = pd.to_datetime(initial_df.created)
         initial_df.drop('created', axis=1, inplace=True)
@@ -23,18 +24,28 @@ def clean_preprocess(initial_df):
         initial_df['num_of_photos'] = initial_df.photos.map(len)
         initial_df['num_of_features'] = initial_df.features.map(len)
         initial_df['description_length'] = initial_df.description.apply(lambda x: len(x.split(" ")))
+        
+        # price per bedroom
+        # creating flag for bedrooms = 0 (studio)
+        initial_df['studio'] = initial_df.bedrooms.apply(lambda x: 1 if x==0 else 0)
+        # setting bedrooms/bathrooms = 0 to 1
+        initial_df.bedrooms[initial_df.bedrooms == 0] = 1
+        initial_df['price_per_bedroom'] = initial_df.price / initial_df.bedrooms
     except:
-        print("Clean_Preprocessed function skipped as it can only be run once")
+        print("    Clean_Preprocessed function skipped as it can only be run once")
     return initial_df
 
 # Remove prices outside of defined range
 def price_outliers(df_NEW, price_low, price_high):
+    print("    Removing prices outside of range:",price_low,"-",price_high,"...")
     df_NEW = df_NEW.drop(df_NEW[df_NEW.price < price_low].index)
     df_NEW = df_NEW.drop(df_NEW[df_NEW.price > price_high].index)
+    
     return df_NEW
 
 # Remove locations outside of New York
 def remove_nonNY_coords(df_NEW, ny_boundaries):
+    print("    Removing rentals outside of NY...")
     #Removing out of bounds longitude
     df_NEW = df_NEW.drop(df_NEW[df_NEW.longitude < ny_boundaries[0]].index)
     df_NEW = df_NEW.drop(df_NEW[df_NEW.longitude > ny_boundaries[1]].index)
@@ -45,46 +56,11 @@ def remove_nonNY_coords(df_NEW, ny_boundaries):
 
     return df_NEW
 
-def buildingID_count(df):
-    buildingID = df['building_id']
-    count = collections.Counter()
-    for buildings in buildingID:
-        count[buildings] += 1
-    return buildingID
-        
-def buildingID_interest(df):
-    buildingID = df['building_id']
-    interests  = df['interest_level']
-    new_df = [buildingID, interests]
-    
-    return new_df
-
-def buildingID_Interest_count(buildingID_interest, label):
-    buildingID_Interest_low = {}
-    count = collections.Counter()
-    
-    for i in buildingID_interest:
-        if i[1] == label:
-            count[buildingID_Interest_low[i]] += 1
-    return buildingID_Interest_low
-
-def buildingID_Interest_Ratio(df):
-    id_ratio= {}
-    uniqueID = df.building_id.unique()
-    count = buildingID_count(df)
-    id_interest     = buildingID_interest(df)
-    id_interest_low = buildingID_Interest_count(id_interest, 'low')
-    
-    for items in uniqueID:
-        ratio = id_interest_low[items] / count[items]
-        id_ratio[items] = ratio
-    
-    return id_ratio
-    
 def euclid_dist(x, lat, long):
     return np.sqrt((x[0]-lat)**2 + (x[1]-long)**2)
 
 def boroughs(df):
+    print("    Creating boroughs feature...")
 # distance from borough centres
     the_bronx     = [40.8448, -73.8648]
     manhattan     = [40.7831, -73.9712]
@@ -103,6 +79,31 @@ def boroughs(df):
                                                      args=(borough_list[key]), 
                                                      axis=1)
     return df
+# Assess each brokers quality 
+# 1 get each broker
+# 2 get number of listings that are high or medium
+# 3 percentage of listings 
+def makeFeatureQuality(strName,df):
+    print("    Creating",strName,"quality feature")
+    QualityTemp = (df.groupby(strName)['interest_level'].apply(list)).to_dict()
+    
+    for key in QualityTemp:
+        qualList = QualityTemp[key]
+        listLength = len(qualList)
+        totalScore = 1
+        for item in qualList:
+            if item == "low":
+                item = 0
+            elif item == "medium":
+                item = 1
+            elif item == "high":
+                item = 1
+            else:
+                item = -99999
+            totalScore =+ item
+        totalScore = totalScore / listLength
+        QualityTemp[key] = [totalScore]
+    return QualityTemp
 
 def main(df):
 #==============================================================================
@@ -110,8 +111,8 @@ def main(df):
 #==============================================================================
     #price_low = 1000
     #price_high = 10000
-    price_low = np.percentile(df['price'].values, 0.5)
-    price_high = np.percentile(df['price'].values, 99.5)
+    price_low = np.percentile(df['price'].values, 1)
+    price_high = np.percentile(df['price'].values, 99)
     
     # Define upper and lower limits for NewYork
     long_low  = -74.1
@@ -123,24 +124,42 @@ def main(df):
 # Clean data and show how many rows of data are removed at each step
 #==============================================================================
     dataCount = len(df)
-    print(dataCount,"datapoints in dataset")
-    
-    df = clean_preprocess(df)
-    newCount= len(df)
-    print("cleanPreprocess removed",dataCount-newCount,"datapoints")
+
+    df = newFeatures(df)
+    print("")
+    print("Datapoints:",dataCount)
+    print("Features",len(df.columns))
+    newCount = len(df)
     dataCount=newCount
     
     df = remove_nonNY_coords(df, ny_boundaries)
     newCount= len(df)
-    print("remove_nonNY_coords removed",dataCount-newCount,"datapoints")
+    print(dataCount-newCount,"rentals outside NY removed")
     dataCount=newCount
     
     df = price_outliers(df, price_low, price_high)
     newCount= len(df)
-    print("remove_outlier_prices removed",dataCount-newCount,"datapoints")
+    print(dataCount-newCount,"datapoints outside price range")
     
-    print(newCount, "datapoints remaining")
+    
     
     df = boroughs(df)
+    
+    # adding the buuilding and manager quality 
+    managerID = 'manager_id'
+    buildingID = 'building_id'
+    mangagerQuality = makeFeatureQuality(managerID,df)
+    buildingQuality = makeFeatureQuality(buildingID,df)
+    
+    df["mangager_quality"] = ""  
+    df["building_quality"] = ""   
+    df["mangager_quality"] = df[managerID].map(mangagerQuality)
+    df["building_quality"] = df[buildingID].map(buildingQuality)
+    
+
+    print("*********************")
+    print("Preprocessing DONE...")
+    print("Datapoints:",len(df))
+    print("Features",len(df.columns))
 
     return df
