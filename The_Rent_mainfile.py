@@ -260,10 +260,10 @@ features_to_use = ['bathrooms','bedrooms','price', 'longitude', 'latitude']
 
 # final features
 # features_to_use = ['latitude','longitude','bathrooms','bedrooms',
-                   'price', 'the_bronx', 'staten_island','manhattan',
-                   'queens','brooklyn', 'num_of_photos', 'price_per_bedroom',
-                   'studio','description_length','num_of_features',
-                   'day_created','month_created']
+#                   'price', 'the_bronx', 'staten_island','manhattan',
+#                   'queens','brooklyn', 'num_of_photos', 'price_per_bedroom',
+#                   'studio','description_length','num_of_features',
+#                   'day_created','month_created']
 
 
 X_all = df[features_to_use]
