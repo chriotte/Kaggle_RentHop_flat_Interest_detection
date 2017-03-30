@@ -308,6 +308,8 @@ from sklearn.metrics import log_loss
 from sklearn.model_selection import train_test_split
 from sklearn_pandas import DataFrameMapper
 from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import GridSearchCV
 
 # In[18]:
 #==============================================================================
@@ -321,9 +323,9 @@ features_to_use = ['latitude','longitude','bathrooms','bedrooms',
                    'queens','brooklyn', 'num_of_photos', 'price_per_bedroom',
                    'studio','description_length','num_of_features']
 
-features_to_use = ['bathrooms','bedrooms','price', 'num_of_photos',
-                   'price_per_bedroom', 'studio','description_length',
-                   'num_of_features']
+#features_to_use = ['bathrooms','bedrooms','price', 'num_of_photos',
+#                   'price_per_bedroom', 'studio','description_length',
+#                   'num_of_features']
 
 
 X_all = df[features_to_use]
@@ -357,8 +359,8 @@ X_val_df = pd.DataFrame(X_val_scaled, index=X_val.index, columns=X_val.columns)
 #==============================================================================
 
 # define model params
-# model = RandomForestClassifier(n_estimators=1000, random_state=1, class_weight = 'balanced') # baseline
-model = MLPClassifier(solver = 'lbfgs', alpha = 1e-2, hidden_layer_sizes = (32,64), random_state=1)
+model = RandomForestClassifier(n_estimators=1000, random_state=1, class_weight = 'balanced') # baseline
+# model = MLPClassifier(solver = 'lbfgs', alpha = 1e-2, hidden_layer_sizes = (32,64), random_state=1,)
 # model = LogisticRegression(class_weight = 'balanced')
 # train model
 model.fit(X_train_df, y_train)
@@ -432,11 +434,37 @@ plot_confusion_matrix(test_cm, classes = ['low','medium','high'], normalize=Fals
 #==============================================================================
 # feature importance measures
 
-#from sklearn.ensemble import ExtraTreesClassifier
-#clf = ExtraTreesClassifier()
-#clf = clf.fit(features, target)
-#clf.feature_importances_
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.feature_selection import SelectFromModel
+clf = ExtraTreesClassifier(n_estimators=200)
+clf = clf.fit(X_train_df, y_train)
+
+features = pd.DataFrame()
+features['feature'] = X_train_df.columns
+features['importance'] = clf.feature_importances_
+
+features.sort(['importance'],ascending=False)
 
 
+# In[]
 
+forest = RandomForestClassifier(max_features='sqrt', verbose=1, class_weight = 'balanced')
 
+parameter_grid = {
+                 'max_depth' : [7,8],
+                 'n_estimators': range(200,300,50),
+                 'criterion': ['gini','entropy']
+                 }
+
+cross_validation = StratifiedKFold(n_splits=5)
+
+cross_validation.get_n_splits(X_train_df, y_train)
+
+grid_search = GridSearchCV(forest,
+                           param_grid=parameter_grid,
+                           cv=cross_validation)
+
+grid_search.fit(X_train_df, y_train)
+
+print('Best score: {}'.format(grid_search.best_score_))
+print('Best parameters: {}'.format(grid_search.best_params_))
