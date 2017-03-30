@@ -16,28 +16,17 @@ import preProcess as pre # Created a module for preprocessing
 # alter dpi to change the figure resolution, 100ish for general use, 300 for report
 mpl.rc("savefig", dpi=100)
 
-# Read data and create dataframes
+# Read data, create dataframes and clean it
 df_raw = pd.read_json("train.json")
+df = pre.main(df_raw)
 
-df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
-df_medium   = df_raw.drop(df_raw[df_raw.interest_level != "medium"].index)
-df_high     = df_raw.drop(df_raw[df_raw.interest_level != "high"].index)
-
+#df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
 # In[3]:
-df_raw.head(3)
-#df.describe()
-
 #==============================================================================
 # Download dataframe to excel for exploration
 #==============================================================================
 #df.to_excel("cleanData.xlsb")
 #df.to_csv("cleanData.csv")
-
-# In[]
-#==============================================================================
-#  Clean and preprocess
-#==============================================================================
-df = pre.main(df_raw)
 
 # In[6]:
 #==============================================================================
@@ -59,31 +48,6 @@ plt.xlabel("Price")
 plt.ylabel("Count")
 plt.show()
 
-
-# In[7]:
-#==============================================================================
-# Feature Creation
-#==============================================================================
-# distance from borough centres
-the_bronx     = [40.8448, -73.8648]
-manhattan     = [40.7831, -73.9712]
-queens        = [40.7282, -73.7949]
-brooklyn      = [40.6782, -73.9442]
-staten_island = [40.5795, -74.1502]
-
-borough_list = {'the_bronx': the_bronx,
-                'manhattan': manhattan,
-                'queens': queens,
-                'brooklyn': brooklyn,
-                'staten_island': staten_island}
-
-def euclid_dist(x, lat, long):
-    return np.sqrt((x[0]-lat)**2 + (x[1]-long)**2)
-
-for key in borough_list:
-    df[key] = df[['latitude','longitude']].apply(euclid_dist, 
-                                                 args=(borough_list[key]), 
-                                                 axis=1)
 # In[]
 # Dictionary of unique buildingID's and their counts 
 buildingID_count = pre.buildingID_count(df)
@@ -95,7 +59,6 @@ ratio = pre.buildingID_Interest_Ratio(df)
 import nltk
 from nltk.stem import WordNetLemmatizer
 import re, html
-
 
 description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
 

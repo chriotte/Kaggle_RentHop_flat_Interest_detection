@@ -19,8 +19,10 @@ def clean_preprocess(initial_df):
         initial_df['DateTime'] = pd.to_datetime(initial_df.created)
         initial_df.drop('created', axis=1, inplace=True)
 
-        # create feature for number of photos
+        # create feature for number of photos, features and description length
         initial_df['num_of_photos'] = initial_df.photos.map(len)
+        initial_df['num_of_features'] = initial_df.features.map(len)
+        initial_df['description_length'] = initial_df.description.apply(lambda x: len(x.split(" ")))
     except:
         print("Clean_Preprocessed function skipped as it can only be run once")
     return initial_df
@@ -78,6 +80,29 @@ def buildingID_Interest_Ratio(df):
         id_ratio[items] = ratio
     
     return id_ratio
+    
+def euclid_dist(x, lat, long):
+    return np.sqrt((x[0]-lat)**2 + (x[1]-long)**2)
+
+def boroughs(df):
+# distance from borough centres
+    the_bronx     = [40.8448, -73.8648]
+    manhattan     = [40.7831, -73.9712]
+    queens        = [40.7282, -73.7949]
+    brooklyn      = [40.6782, -73.9442]
+    staten_island = [40.5795, -74.1502]
+    
+    borough_list = {'the_bronx': the_bronx,
+                    'manhattan': manhattan,
+                    'queens': queens,
+                    'brooklyn': brooklyn,
+                    'staten_island': staten_island}
+    
+    for key in borough_list:
+        df[key] = df[['latitude','longitude']].apply(euclid_dist, 
+                                                     args=(borough_list[key]), 
+                                                     axis=1)
+    return df
 
 def main(df):
 #==============================================================================
@@ -115,4 +140,7 @@ def main(df):
     print("remove_outlier_prices removed",dataCount-newCount,"datapoints")
     
     print(newCount, "datapoints remaining")
+    
+    df = boroughs(df)
+
     return df
