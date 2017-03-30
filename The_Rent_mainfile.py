@@ -49,10 +49,45 @@ plt.ylabel("Count")
 plt.show()
 
 # In[]
-# Dictionary of unique buildingID's and their counts 
-buildingID_count = pre.buildingID_count(df)
+# Assess each brokers quality 
 
-ratio = pre.buildingID_Interest_Ratio(df)
+
+# 1 get each broker
+# 2 get number of listings that are high or medium
+# 3 percentage of listings 
+
+
+def makeFeatureQuality(strName):
+    QualityTemp = (df.groupby(strName)['interest_level'].apply(list)).to_dict()
+    
+    for key in QualityTemp:
+        qualList = QualityTemp[key]
+        listLength = len(qualList)
+        totalScore = 1
+        for item in qualList:
+            if item == "low":
+                item = 0
+            elif item == "medium":
+                item = 1
+            elif item == "high":
+                item = 1
+            else:
+                item = -99999
+            totalScore =+ item
+        totalScore = totalScore / listLength
+        QualityTemp[key] = [totalScore]
+    return QualityTemp
+
+# adding the new value to the dataframe
+managerID = 'manager_id'
+buildingID = 'building_id'
+mangagerQuality = makeFeatureQuality(managerID)
+buildingQuality = makeFeatureQuality(buildingID)
+
+df["mangager_quality"] = ""  
+df["building_quality"] = ""   
+df["mangager_quality"] = df[managerID].map(mangagerQuality)
+df["building_quality"] = df[buildingID].map(buildingQuality)
 
 # In[7]:
 # ### Description BoW - TO FINISH
