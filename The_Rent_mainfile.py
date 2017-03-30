@@ -120,10 +120,45 @@ for key in borough_list:
     
     
 # In[]
-# Dictionary of unique buildingID's and their counts 
-buildingID_count = pre.buildingID_count(df)
+# Assess each brokers quality 
 
-ratio = pre.buildingID_Interest_Ratio(df)
+
+# 1 get each broker
+# 2 get number of listings that are high or medium
+# 3 percentage of listings 
+
+
+mangagerQualityTemp = (df.groupby('manager_id')['interest_level'].apply(list)).to_dict()
+
+for key in mangagerQualityTemp:
+    qualList = mangagerQualityTemp[key]
+    listLength = len(qualList)
+    totalScore = 1
+    for item in qualList:
+        if item == "low":
+            item = 0
+        elif item == "medium":
+            item = 1
+        elif item == "high":
+            item = 1
+        else:
+            item = -99999
+        totalScore =+ item
+    totalScore = totalScore / listLength
+    mangagerQualityTemp[key] = [totalScore, listLength]
+
+# adding the new value to the datafram
+
+df["mangager_quality"] = ""
+
+for index, row in df.iterrows():
+    for manager in mangagerQualityTemp:
+        if row["manager_id"] == manager:
+            df["mangager_quality"] = mangagerQualityTemp[manager][0]
+            print(df["mangager_quality"])
+            break;
+    
+    
 
         
 
