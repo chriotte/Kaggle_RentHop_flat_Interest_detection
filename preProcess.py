@@ -113,10 +113,6 @@ def makeFeatureQuality(strName,df):
         QualityTemp[key] = [totalScore]
     return QualityTemp
 
-
-
-def main(df,train):
-    
 # In[]
 
 # building occurances and listings for each broker
@@ -154,6 +150,10 @@ df["mangager_num_listings"] = df[managerID].map(mangagerQuality)
 df["building_num_occurances"] = df[buildingID].map(buildingQuality)
 
 
+
+def main(df,train):
+    
+    
 #==============================================================================
 # Control panel for price and location data
 #==============================================================================
