@@ -17,26 +17,8 @@ plasma = sns.color_palette(palette='plasma',n_colors=10)
 
 # Read data, create dataframes and clean it
 df = pd.read_json("train.json")
+df = pre.main(df)
 
-target_conversion = {'low':0,'medium':1,'high':2}
-y_all = df.interest_level.map(target_conversion).values
-X_train, X_test, _, _ = train_test_split(df, y_all, test_size=0.1, random_state=0, stratify=y_all)
-
-X_train, managerQuality, buildingQuality = pre.main(X_train, True)
-X_test = pre.main(X_test, False)
-
-managerID = 'manager_id'
-buildingID = 'building_id'
-
-# Feature creation for testing sensitive features
-X_test["manager_quality"] = X_test[managerID].map(managerQuality)
-X_test.manager_quality.fillna(0,inplace=True)
-X_test["manager_quality"] = X_test.manager_quality.apply(lambda x: x[0] if x != 0 else 0)
-X_test["building_quality"] = X_test[buildingID].map(buildingQuality)
-X_test.building_quality.fillna(0,inplace=True)
-X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0] if x != 0 else 0)
-
-df = X_train
 # In[11]:
     
 df = pd.read_json("train.json")
