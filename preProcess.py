@@ -112,6 +112,7 @@ def makeFeatureQuality(strName,df):
         totalScore = totalScore / listLength
         QualityTemp[key] = [totalScore]
     return QualityTemp
+    
 
 # In[]
 
