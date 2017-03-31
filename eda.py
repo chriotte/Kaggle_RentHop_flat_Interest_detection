@@ -17,7 +17,7 @@ plasma = sns.color_palette(palette='plasma',n_colors=10)
 
 # Read data, create dataframes and clean it
 df = pd.read_json("train.json")
-df = pre.main(df)
+df = pre.main(df, True)
 
 # In[11]:
     
