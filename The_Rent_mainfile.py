@@ -233,7 +233,7 @@ print("Done with descWordsAndFreq")
 
 # In[17]:
 #==============================================================================
-# Modelling
+# Modelling Libraries
 #==============================================================================
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_score as cv
@@ -260,16 +260,23 @@ from sklearn.ensemble import GradientBoostingClassifier
 # baseline features
 #features_to_use = ['bathrooms','bedrooms','price', 'longitude', 'latitude']
 
-# final features
-features_to_use = ['latitude','longitude','bathrooms','bedrooms','price', 
-                   #'the_bronx', 'staten_island','manhattan','queens','brooklyn',
+# all features
+#features_to_use = ['latitude','longitude','bathrooms','bedrooms','price', 
+#                   'the_bronx', 'staten_island','manhattan','queens','brooklyn',
+#                   'log_price', 'price_sq', 
+#                   'num_of_photos', 'price_per_bedroom',
+#                   'studio','description_length','num_of_features',
+#                   'day_created','month_created', 'manager_quality', 'building_quality',
+#                   'hour_created', 'day_of_week_created']
+
+                   # final features
+features_to_use = ['latitude','longitude','price',
                    'log_price', 'price_sq', 
+                   'the_bronx', 'staten_island','manhattan','queens','brooklyn',
                    'num_of_photos', 'price_per_bedroom',
-                   'studio','description_length','num_of_features',
-                   'day_created','month_created', 'manager_quality', 'building_quality',
+                   'description_length','num_of_features',
+                   'day_created', 'manager_quality', 'building_quality',
                    'hour_created', 'day_of_week_created']
-
-
 
 
 # convert target label into numerical (ordinal)
@@ -303,8 +310,9 @@ X_test_df = pd.DataFrame(X_test_scaled, index=X_test_cut.index, columns=X_test_c
 # model = RandomForestClassifier(n_estimators=1000, random_state=1, class_weight = 'balanced') # baseline
 #model = MLPClassifier(solver = 'lbfgs', alpha = 1e-6, hidden_layer_sizes = (10,30,5), random_state=1,activation='tanh')
 # model = GradientBoostingClassifier(n_estimators=1000, random_state=1)
-model = LogisticRegressionCV(class_weight='balanced', random_state=1)
-#model = LogisticRegression(class_weight = 'balanced', random_state=1)
+#model = LogisticRegressionCV(class_weight='balanced', random_state=1, Cs=list(np.power(10.0, np.arange(-10, 10))))
+model = LogisticRegression(class_weight = 'balanced', random_state=1)
+
 # train model
 model.fit(X_train_df, y_train)
 
@@ -333,7 +341,7 @@ print(classification_report(y_test, y_hat_test))
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import SelectFromModel
 clf = ExtraTreesClassifier(n_estimators=1000, random_state = 0)
-clf = clf.fit(X_train_df, y_train)
+clf = clf.fit(X_test_df, y_test)
 
 features = pd.DataFrame()
 features['feature'] = X_train_df.columns
@@ -343,10 +351,57 @@ features.sort(['importance'],ascending=False)
 
 sns.barplot(y = 'feature', x = 'importance', data=features.sort_values(by='importance', ascending=False))
 
+mdl = SelectFromModel(clf, prefit=True)
+X_train_new = mdl.transform(X_train_df)
+X_train_new.shape
+
+X_test_new = mdl.transform(X_test_df)
+X_test_new.shape
+
+
 # In[]
-#==============================================================================
-# Plot confusion matrix
-#==============================================================================
+# hyperparam optimisation for random forest
+forest = RandomForestClassifier(max_features='sqrt', verbose=1, class_weight = 'balanced')
+
+parameter_grid = {
+                 'max_depth' : [7,8],
+                 'n_estimators': [250,500,1000],
+                 'criterion': ['gini','entropy']
+                 }
+
+cross_validation = StratifiedKFold(n_splits=5)
+cross_validation.get_n_splits(X_train_df, y_train)
+
+grid_search = GridSearchCV(forest, param_grid=parameter_grid, cv=cross_validation, n_jobs=4, scoring='neg_log_loss')
+grid_search.fit(X_train_df, y_train)
+
+print('Best score: {}'.format(grid_search.best_score_))
+print('Best parameters: {}'.format(grid_search.best_params_))
+
+# In[]
+# hyperparam optimisation for neural net
+clf_nn = MLPClassifier(solver='lbfgs', random_state=1)
+parameter_grid = {
+                  'alpha': [1e-6, 1e-5],
+                  'activation': ['tanh', 'relu', 'logistic'],
+                  'hidden_layer_sizes': [(10, 30, 5), (30, 30, 5)]
+                 }
+
+cross_validation = StratifiedKFold(n_splits=5)
+cross_validation.get_n_splits(X_train_df, y_train)
+
+gs_nn = GridSearchCV(clf_nn, param_grid=parameter_grid, scoring='neg_log_loss', n_jobs=-1, cv=cross_validation, verbose=2, refit=True)
+gs_nn.fit(X_train_df, y_train)
+print('- Best score: %.4f' % gs_nn.best_score_)
+print('- Best params: %s' % gs_nn.best_params_)
+
+
+# In[]
+from sklearn.linear_model import RandomizedLogisticRegression
+mdl = RandomizedLogisticRegression(n_resampling=1000)
+mdl.fit(X_train_df, y_train)
+
+# In[Plotting confusion matrix]
 import itertools
 
 def plot_confusion_matrix(cm, classes,
@@ -383,47 +438,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xlabel('Predicted label')
 
 
-test_cm = confusion_matrix(y_val, y_hat_val, labels=[0,1,2])
+test_cm = confusion_matrix(y_test, y_hat_test, labels=[0,1,2])
 
 plot_confusion_matrix(test_cm, classes = ['low','medium','high'], normalize=False)
 
-
-
-# In[]
-# hyperparam optimisation for random forest
-forest = RandomForestClassifier(max_features='sqrt', verbose=1, class_weight = 'balanced')
-
-parameter_grid = {
-                 'max_depth' : [7,8],
-                 'n_estimators': [250,500,1000],
-                 'criterion': ['gini','entropy']
-                 }
-
-cross_validation = StratifiedKFold(n_splits=3)
-cross_validation.get_n_splits(X_train_df, y_train)
-
-grid_search = GridSearchCV(forest, param_grid=parameter_grid, cv=cross_validation, n_jobs=4, scoring='neg_log_loss')
-grid_search.fit(X_train_df, y_train)
-
-print('Best score: {}'.format(grid_search.best_score_))
-print('Best parameters: {}'.format(grid_search.best_params_))
-
-# In[]
-# hyperparam optimisation for neural net
-clf_nn = MLPClassifier(solver='lbfgs', random_state=1)
-parameter_grid = {
-                  'alpha': [1e-6, 1e-5],
-                  'activation': ['tanh', 'relu', 'logistic'],
-                  'hidden_layer_sizes': [(10, 30, 5), (30, 30, 5)]
-                 }
-
-cross_validation = StratifiedKFold(n_splits=3)
-cross_validation.get_n_splits(X_train_df, y_train)
-
-gs_nn = GridSearchCV(clf_nn, param_grid=parameter_grid, scoring='neg_log_loss', n_jobs=-1, cv=cross_validation, verbose=2, refit=True)
-gs_nn.fit(X_train_df, y_train)
-print('- Best score: %.4f' % gs_nn.best_score_)
-print('- Best params: %s' % gs_nn.best_params_)
-
-
-# In[]
