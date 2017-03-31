@@ -22,6 +22,8 @@ def newFeatures(initial_df):
         initial_df['day_created'] = initial_df.DateTime.map(lambda x: x.day)
         initial_df['month_created'] = initial_df.DateTime.map(lambda x: x.month)
         initial_df['year_created'] = initial_df.DateTime.map(lambda x: x.year)
+        initial_df['hour_created'] = initial_df.DateTime.map(lambda x: x.hour)
+        initial_df['day_of_week_created'] = initial_df.DateTime.map(lambda x: x.dayofweek)
         initial_df.drop('created', axis=1, inplace=True)
 
         # create feature for number of photos, features and description length
@@ -29,6 +31,9 @@ def newFeatures(initial_df):
         initial_df['num_of_features'] = initial_df.features.map(len)
         initial_df['description_length'] = initial_df.description.apply(lambda x: len(x.split(" ")))
         initial_df['studio'] = initial_df.bedrooms.apply(lambda x: 1 if x==0 else 0)
+        
+        initial_df['log_price'] = initial_df.price.map(np.log)
+        initial_df['price_sq'] = initial_df.price.map(np.square)
         
         # price per bedroom
         initial_df.bedrooms[initial_df.bedrooms == 0] = 1
