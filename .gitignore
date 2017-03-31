@@ -7,3 +7,6 @@ peturTest.py
 .spyproject/workspace.ini
 the rent - hesham.ipynb
 .spyproject/workspace.ini
+*.ini
+
+*.ini
