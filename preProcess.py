@@ -2,17 +2,21 @@
 import numpy as np
 import pandas as pd
 
+# Cut out bottom and top 1% of price data
 def price_percent_cut(df_NEW, col):
     print("    Cutting out 1% of the data")
+    #find the top 1%
     price_low = np.percentile(df_NEW[col].values, 1)
     price_high = np.percentile(df_NEW[col].values, 99)
     
+    
+    #cut out the defined range above from the dataframe
     df_NEW = df_NEW.drop(df_NEW[df_NEW.col < price_low].index)
     df_NEW = df_NEW.drop(df_NEW[df_NEW.col > price_high].index)
 
     return df_NEW
 
-# Datetime object and number of photos feature engineering
+# Create all extra simple features
 def newFeatures(initial_df):
     # convert created column into datetime type
     print("    Creating new features")
@@ -32,6 +36,7 @@ def newFeatures(initial_df):
         initial_df['description_length'] = initial_df.description.apply(lambda x: len(x.split(" ")))
         initial_df['studio'] = initial_df.bedrooms.apply(lambda x: 1 if x==0 else 0)
         
+        # Log price and square feet
         initial_df['log_price'] = initial_df.price.map(np.log)
         initial_df['price_sq'] = initial_df.price.map(np.square)
         
@@ -63,9 +68,11 @@ def remove_nonNY_coords(df_NEW, ny_boundaries):
 
     return df_NEW
 
+# FInd the euclidian distance
 def euclid_dist(x, lat, long):
     return np.sqrt((x[0]-lat)**2 + (x[1]-long)**2)
 
+# Create euclidian distance to each bourogh based on longitude and latitude
 def boroughs(df):
     print("    Creating boroughs feature...")
 # distance from borough centres
@@ -75,6 +82,7 @@ def boroughs(df):
     brooklyn      = [40.6782, -73.9442]
     staten_island = [40.5795, -74.1502]
     
+    # List of the boroughs
     borough_list = {'the_bronx': the_bronx,
                     'manhattan': manhattan,
                     'queens': queens,
@@ -87,8 +95,8 @@ def boroughs(df):
                                                      axis=1)
     return df
 
-# Assess each brokers quality 
-# 1 get each broker
+# Assess each ID_quality 
+# 1 get each ID
 # 2 get number of listings that are high or medium
 # 3 percentage of listings 
 def makeFeatureQuality(strName,df):
@@ -113,8 +121,7 @@ def makeFeatureQuality(strName,df):
         QualityTemp[key] = [totalScore]
     return QualityTemp
 
-
-
+# Main function that runs all the above pre
 def main(df,train):
 #==============================================================================
 # Control panel for price and location data
@@ -156,10 +163,9 @@ def main(df,train):
 
     df = boroughs(df)
     
-    
-
-    # building occurances and listings for each broker
-    
+#==============================================================================
+# Building occurances and listings for each broker
+#==============================================================================
     def getOccurances(strName):
         QualityTemp = (df.groupby(strName)['interest_level'].apply(list)).to_dict()
         
