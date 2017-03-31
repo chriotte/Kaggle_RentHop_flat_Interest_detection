@@ -15,9 +15,10 @@ output_notebook()
 terrain = sns.color_palette(palette='terrain',n_colors=10)
 plasma = sns.color_palette(palette='plasma',n_colors=10)
 
+# In[]
 # Read data, create dataframes and clean it
 df = pd.read_json("train.json")
-df = pre.main(df)
+df, temp1, temp2 = pre.main(df,True)
 
 # In[11]:
     
@@ -99,30 +100,8 @@ longLat = [[lowLat,lowLong],[medLat,medLong],[highLat,highLong]]
 
 colors = iter(cm.rainbow(np.linspace(0, 1, len(longLat))))
 for int_level in longLat:
-#    plt.set_alpha(0.7)
     plt.scatter(int_level[1], int_level[0], color=next(colors))
 
-#plt.set_alpha(0.7)
-#plt.show()
-    
-
-# In[]
-N = 4000
-x = np.random.random(size=N) * 100
-y = np.random.random(size=N) * 100
-radii = np.random.random(size=N) * 1.5
-colors = [
-    "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+2*x, 30+2*y)
-]
-
-
-p = figure(title="color_scatter.py example")
-
-p.scatter(x, y, radius=radii,
-          fill_color=colors, fill_alpha=0.6,
-          line_color=None)
-
-show(p)  # open a browser
 
 # In[]
 
@@ -139,8 +118,6 @@ p.circle(lowLong,lowLat,size=3,color=terrain.as_hex()[1],fill_alpha=0.1,line_alp
 p.circle(medLong,medLat,size=3,color=plasma.as_hex()[9],fill_alpha=0.1,line_alpha=0.1,legend='med')
 p.circle(highLong,highLat,size=3,color=plasma.as_hex()[5],fill_alpha=0.1,line_alpha=0.1,legend='high')
 show(p, notebook_handle=True)
-
-
 
 p1 = figure(width=500, height=500, title=None,y_range=(40.65,40.85),x_range=(-74.05,-73.85))
 p1.circle(lowLong,lowLat,size=3,color=terrain.as_hex()[1],fill_alpha=0.1,line_alpha=0.1,legend='low')
@@ -180,6 +157,12 @@ plt.xlabel('longitude')
 sns.countplot(x='bedrooms',hue='interest_level', data=df)
 plt.ylabel('Occurances')
 plt.xlabel('Number of bedrooms')
+
+# In[]
+sns.countplot(x='hour_created', hue='interest_level', data=df)
+plt.ylabel('Number of Occurrences', fontsize=15)
+plt.xlabel('Hour of the day posted', fontsize=15)
+plt.show()
 
 # In[14]:
 #==============================================================================
