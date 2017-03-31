@@ -36,51 +36,6 @@ X_test["building_quality"] = X_test[buildingID].map(buildingQuality)
 X_test.building_quality.fillna(0,inplace=True)
 X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0] if x != 0 else 0) 
 
-#df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
-#==============================================================================
-# Download dataframe to excel for exploration
-#==============================================================================
-#df.to_excel("cleanData.xlsb")
-#df.to_csv("cleanData.csv")
-
-#df_raw.to_excel("raw_data.xlsb")
-#df_raw.to_csv("raw_data.csv")
-
-
-
-# In[16]:
-#==============================================================================
-# OTHER NOTES - REMOVE AT SOME POINT
-#==============================================================================
-"""
-Considerations with the data:
-    imbalanced dataset (not many high interest apartments compared to the rest)
-
-
-Plots to produce
-    barplot of interest levels - done
-    map of interest levels
-    price map
-
-
-Features to use
-    bathrooms
-    bedrooms
-    price
-
-Additional features to create:
-    Number of images
-    description length
-    creation year, month, day
-    description word frequency - create features out of top x words
-    distance to borough centres
-
-
-Target:
-    Interest Level
-"""
-## wordcloud stuff
-
 
 # In[]:
 # ### Description BoW - TO FINISH
@@ -166,8 +121,9 @@ from sklearn.model_selection import train_test_split
 from sklearn_pandas import DataFrameMapper
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import GridSearchCV
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.model_selection import GridSearchCV 
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 # In[18]:
 #==============================================================================
@@ -227,10 +183,11 @@ X_test_df = pd.DataFrame(X_test_scaled, index=X_test_cut.index, columns=X_test_c
 
 # define model params
 # model = RandomForestClassifier(n_estimators=1000, random_state=1, class_weight = 'balanced') # baseline
-#model = MLPClassifier(solver = 'lbfgs', alpha = 1e-6, hidden_layer_sizes = (10,30,5), random_state=1,activation='tanh')
+model = MLPClassifier(solver = 'lbfgs', alpha = 1e-6, hidden_layer_sizes = (10,30,5), random_state=1,activation='tanh')
 # model = GradientBoostingClassifier(n_estimators=1000, random_state=1)
 #model = LogisticRegressionCV(class_weight='balanced', random_state=1, Cs=list(np.power(10.0, np.arange(-10, 10))))
-model = LogisticRegression(class_weight = 'balanced', random_state=1)
+#model = GaussianNB()
+#model = LogisticRegression(class_weight = 'balanced', random_state=1)
 
 # train model
 model.fit(X_train_df, y_train)
@@ -316,9 +273,7 @@ print('- Best params: %s' % gs_nn.best_params_)
 
 
 # In[]
-from sklearn.linear_model import RandomizedLogisticRegression
-mdl = RandomizedLogisticRegression(n_resampling=1000)
-mdl.fit(X_train_df, y_train)
+    
 
 # In[Plotting confusion matrix]
 import itertools
