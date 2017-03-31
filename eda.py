@@ -9,6 +9,8 @@ from sklearn.model_selection import train_test_split
 from bokeh.io import output_notebook
 from bokeh.layouts import gridplot,row,column
 from bokeh.plotting import figure,show
+from bokeh.plotting import figure, show, output_file
+import matplotlib.cm as cm
 output_notebook()
 terrain = sns.color_palette(palette='terrain',n_colors=10)
 plasma = sns.color_palette(palette='plasma',n_colors=10)
@@ -26,13 +28,20 @@ X_test = pre.main(X_test, False)
 managerID = 'manager_id'
 buildingID = 'building_id'
 
+# Feature creation for testing sensitive features
 X_test["manager_quality"] = X_test[managerID].map(managerQuality)
-#X_test["manager_quality"] = X_test.manager_quality.apply(lambda x: x[0])
+X_test.manager_quality.fillna(0,inplace=True)
+X_test["manager_quality"] = X_test.manager_quality.apply(lambda x: x[0] if x != 0 else 0)
 X_test["building_quality"] = X_test[buildingID].map(buildingQuality)
-#X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0]) 
+X_test.building_quality.fillna(0,inplace=True)
+X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0] if x != 0 else 0)
 
 df = X_train
 # In[11]:
+    
+df = pd.read_json("train.json")
+
+# In[]
 #==============================================================================
 #==============================================================================
 #==============================================================================
@@ -42,31 +51,96 @@ df = X_train
 #==============================================================================
 # Price plotting
 #==============================================================================
-price = df['price']
-plt.hist(df['price'], 100)
-plt.title("Price with top 1% removed")
-plt.xlabel("Price")
-plt.ylabel("Count")
-plt.xlim(1000, 13000)
+plt.scatter(range(df.shape[0]), np.sort(df.price.values))
+plt.title("Price with outliers present",fontsize = 18)
+plt.xlabel('Price', fontsize = 15)
+plt.ylabel('Number of apartment listings', fontsize = 15)
+plt.show()
+
+# In[]
+sns.distplot(df.price.values, bins=25, kde=False)
+plt.xlabel('Price', fontsize = 15)
+plt.ylabel('Number of apartment listings', fontsize = 15)
+plt.title("Price data after removing outliers", fontsize = 18)
+plt.show()
+
+# In[]
+sns.distplot(df.price.values, bins=25, kde=False)
+plt.xlabel('Price', fontsize = 15)
+plt.ylabel('Number of apartment listings', fontsize = 15)
+plt.title("Price data after removing outliers", fontsize = 18)
 plt.show()
 
 # In[11]:
 #==============================================================================
 # Location plotting
 #==============================================================================
-plt.hist(df['price'], 100)
-plt.title("Distribution with top 1% removed")
-plt.xlabel("Price")
-plt.ylabel("Count")
-plt.show()
+long_low  = -74.1
+long_high = -73.7
+lat_low   =  40.5
+lat_high  =  41
+x = [long_low,long_high]
+y = [lat_low,lat_high]
+plt.xlim(x)
+plt.ylim(y)
 
-# In[]
 
 long = df['longitude']
 lat  = df['latitude']
-
+plt.title("Distribution of apartments", fontsize = 18)
+plt.ylabel('Longitude', fontsize = 15)
+plt.xlabel('Latitude', fontsize = 15)
 plt.scatter(long, lat)
 
+# In[]
+long_low  = -74.1
+long_high = -73.7
+lat_low   =  40.5
+lat_high  =  41
+x = [long_low,long_high]
+y = [lat_low,lat_high]
+plt.xlim(x)
+plt.ylim(y)
+
+plt.title("Distribution of apartments", fontsize = 18)
+plt.ylabel('Longitude', fontsize = 15)
+plt.xlabel('Latitude', fontsize = 15)
+
+lowLat=df['latitude'][df['interest_level']=='low']
+lowLong=df['longitude'][df['interest_level']=='low']
+medLat=df['latitude'][df['interest_level']=='medium']
+medLong=df['longitude'][df['interest_level']=='medium']
+highLat=df['latitude'][df['interest_level']=='high']
+highLong=df['longitude'][df['interest_level']=='high']
+
+longLat = [[lowLat,lowLong],[medLat,medLong],[highLat,highLong]]
+
+colors = iter(cm.rainbow(np.linspace(0, 1, len(longLat))))
+for int_level in longLat:
+#    plt.set_alpha(0.7)
+    plt.scatter(int_level[1], int_level[0], color=next(colors))
+
+#plt.set_alpha(0.7)
+#plt.show()
+    
+
+# In[]
+N = 4000
+x = np.random.random(size=N) * 100
+y = np.random.random(size=N) * 100
+radii = np.random.random(size=N) * 1.5
+colors = [
+    "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+2*x, 30+2*y)
+]
+
+
+p = figure(title="color_scatter.py example")
+
+p.scatter(x, y, radius=radii,
+          fill_color=colors, fill_alpha=0.6,
+          line_color=None)
+
+show(p)  # open a browser
 
 # In[]
 
