@@ -114,6 +114,44 @@ def makeFeatureQuality(strName,df):
     return QualityTemp
 
 def main(df,train):
+    
+# In[]
+
+# building occurances and listings for each broker
+
+def getOccurances(strName):
+    QualityTemp = (df.groupby(strName)['interest_level'].apply(list)).to_dict()
+    
+    for key in QualityTemp:
+        qualList = QualityTemp[key]
+        listLength = len(qualList)
+        totalScore = 1
+        for item in qualList:
+            if item == "low":
+                item = 0
+            elif item == "medium":
+                item = 1
+            elif item == "high":
+                item = 1
+            else:
+                item = -99999
+            totalScore =+ item
+        totalScore = totalScore / listLength
+        QualityTemp[key] = listLength
+    return QualityTemp
+
+# adding the new value to the dataframe
+managerID = 'manager_id'
+buildingID = 'building_id'
+mangagerQuality = getOccurances(managerID)
+buildingQuality = getOccurances(buildingID)
+
+df["mangager_num_listings"] = ""  
+df["building_num_occurances"] = "" 
+df["mangager_num_listings"] = df[managerID].map(mangagerQuality)
+df["building_num_occurances"] = df[buildingID].map(buildingQuality)
+
+
 #==============================================================================
 # Control panel for price and location data
 #==============================================================================
