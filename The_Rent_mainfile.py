@@ -36,57 +36,13 @@ X_test["building_quality"] = X_test[buildingID].map(buildingQuality)
 X_test.building_quality.fillna(0,inplace=True)
 X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0] if x != 0 else 0) 
 
-#df_low      = df_raw.drop(df_raw[df_raw.interest_level != "low"].index)
-#==============================================================================
-# Download dataframe to excel for exploration
-#==============================================================================
-#df.to_excel("cleanData.xlsb")
-#df.to_csv("cleanData.csv")
-
-#df_raw.to_excel("raw_data.xlsb")
-#df_raw.to_csv("raw_data.csv")
-
-
-
-# In[16]:
-#==============================================================================
-# OTHER NOTES - REMOVE AT SOME POINT
-#==============================================================================
-"""
-Considerations with the data:
-    imbalanced dataset (not many high interest apartments compared to the rest)
-
-
-Plots to produce
-    barplot of interest levels - done
-    map of interest levels
-    price map
-
-
-Features to use
-    bathrooms
-    bedrooms
-    price
-
-Additional features to create:
-    Number of images
-    description length
-    creation year, month, day
-    description word frequency - create features out of top x words
-    distance to borough centres
-
-
-Target:
-    Interest Level
-"""
-## wordcloud stuff
-
 
 # In[]:
 # ### Description BoW - TO FINISH
 import nltk
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer,PorterStemmer
 import re, html
+
 
 description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
 
@@ -96,21 +52,47 @@ tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
 def makeFreqDict(description):
 # takes a string, splits it up and add the occurances of each word to the dictionary
     no_tags = tag_re.sub('', description)
+    no_tags = re.sub(r"(?s)<.*?>", " ", description)
+    no_tags = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", no_tags)
+    no_tags = re.sub("\\\\u(.){4}", " ", no_tags)
+    no_tags = re.sub(r"&nbsp;", " ", no_tags)
+    no_tags = re.sub(r"\s{2,}", " ", no_tags)
     description = html.escape(no_tags)
+    stemmer = PorterStemmer()
     words = nltk.tokenize.word_tokenize(description)
-
+    wordArray = []
     unimportant_words = [':', 'http', '.', ',', '?', '...', "'s", "n't", 'RT', ';', '&', ')', '``', 'u', '(', "''", '|',]
     for word in words:
         if word not in unimportant_words:
             word = WordNetLemmatizer().lemmatize(word)
-
+            word = stemmer.stem(word)
             if word in wordFreqDict:
                 wordFreqDict[word] += 1
             else:
                 wordFreqDict[word] = 1
+                wordArray.append(word)
+    return wordArray
 
 
-#makeFreqDict(description)
+makeFreqDict(description)
+# In[] # make a new decription field of words only
+
+#curDescription = df['description'].to_dict()
+#df['new_description'] = ""
+#for key in curDescription:
+#    curDescription[key] = makeFreqDict(curDescription[key])
+#    
+#    
+#df.replace({"new_description": curDescription})
+#    
+#    
+#    
+    
+
+
+
+
+
 # In[]
 # Make a word cloud from features and description, the word cloud is made trhoug wordle.net 
 
@@ -152,7 +134,7 @@ print("Done with descWordsAndFreq")
 
 # In[17]:
 #==============================================================================
-# Modelling
+# Modelling Libraries
 #==============================================================================
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_score as cv
@@ -166,8 +148,9 @@ from sklearn.model_selection import train_test_split
 from sklearn_pandas import DataFrameMapper
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import GridSearchCV
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.model_selection import GridSearchCV 
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 # In[18]:
 #==============================================================================
@@ -179,16 +162,23 @@ from sklearn.ensemble import GradientBoostingClassifier
 # baseline features
 #features_to_use = ['bathrooms','bedrooms','price', 'longitude', 'latitude']
 
-# final features
-features_to_use = ['latitude','longitude','bathrooms','bedrooms','price', 
-                   #'the_bronx', 'staten_island','manhattan','queens','brooklyn',
+# all features
+#features_to_use = ['latitude','longitude','bathrooms','bedrooms','price', 
+#                   'the_bronx', 'staten_island','manhattan','queens','brooklyn',
+#                   'log_price', 'price_sq', 
+#                   'num_of_photos', 'price_per_bedroom',
+#                   'studio','description_length','num_of_features',
+#                   'day_created','month_created', 'manager_quality', 'building_quality',
+#                   'hour_created', 'day_of_week_created']
+
+                   # final features
+features_to_use = ['latitude','longitude','price',
                    'log_price', 'price_sq', 
+                   'the_bronx', 'staten_island','manhattan','queens','brooklyn',
                    'num_of_photos', 'price_per_bedroom',
-                   'studio','description_length','num_of_features',
-                   'day_created','month_created', 'manager_quality', 'building_quality',
+                   'description_length','num_of_features',
+                   'day_created', 'manager_quality', 'building_quality',
                    'hour_created', 'day_of_week_created']
-
-
 
 
 # convert target label into numerical (ordinal)
@@ -220,10 +210,12 @@ X_test_df = pd.DataFrame(X_test_scaled, index=X_test_cut.index, columns=X_test_c
 
 # define model params
 # model = RandomForestClassifier(n_estimators=1000, random_state=1, class_weight = 'balanced') # baseline
-#model = MLPClassifier(solver = 'lbfgs', alpha = 1e-6, hidden_layer_sizes = (10,30,5), random_state=1,activation='tanh')
+model = MLPClassifier(solver = 'lbfgs', alpha = 1e-6, hidden_layer_sizes = (10,30,5), random_state=1,activation='tanh')
 # model = GradientBoostingClassifier(n_estimators=1000, random_state=1)
-model = LogisticRegressionCV(class_weight='balanced', random_state=1)
+#model = LogisticRegressionCV(class_weight='balanced', random_state=1, Cs=list(np.power(10.0, np.arange(-10, 10))))
+#model = GaussianNB()
 #model = LogisticRegression(class_weight = 'balanced', random_state=1)
+
 # train model
 model.fit(X_train_df, y_train)
 
@@ -252,7 +244,7 @@ print(classification_report(y_test, y_hat_test))
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import SelectFromModel
 clf = ExtraTreesClassifier(n_estimators=1000, random_state = 0)
-clf = clf.fit(X_train_df, y_train)
+clf = clf.fit(X_test_df, y_test)
 
 features = pd.DataFrame()
 features['feature'] = X_train_df.columns
@@ -262,10 +254,55 @@ features.sort(['importance'],ascending=False)
 
 sns.barplot(y = 'feature', x = 'importance', data=features.sort_values(by='importance', ascending=False))
 
+mdl = SelectFromModel(clf, prefit=True)
+X_train_new = mdl.transform(X_train_df)
+X_train_new.shape
+
+X_test_new = mdl.transform(X_test_df)
+X_test_new.shape
+
+
 # In[]
-#==============================================================================
-# Plot confusion matrix
-#==============================================================================
+# hyperparam optimisation for random forest
+forest = RandomForestClassifier(max_features='sqrt', verbose=1, class_weight = 'balanced')
+
+parameter_grid = {
+                 'max_depth' : [7,8],
+                 'n_estimators': [250,500,1000],
+                 'criterion': ['gini','entropy']
+                 }
+
+cross_validation = StratifiedKFold(n_splits=5)
+cross_validation.get_n_splits(X_train_df, y_train)
+
+grid_search = GridSearchCV(forest, param_grid=parameter_grid, cv=cross_validation, n_jobs=4, scoring='neg_log_loss')
+grid_search.fit(X_train_df, y_train)
+
+print('Best score: {}'.format(grid_search.best_score_))
+print('Best parameters: {}'.format(grid_search.best_params_))
+
+# In[]
+# hyperparam optimisation for neural net
+clf_nn = MLPClassifier(solver='lbfgs', random_state=1)
+parameter_grid = {
+                  'alpha': [1e-6, 1e-5],
+                  'activation': ['tanh', 'relu', 'logistic'],
+                  'hidden_layer_sizes': [(10, 30, 5), (30, 30, 5)]
+                 }
+
+cross_validation = StratifiedKFold(n_splits=5)
+cross_validation.get_n_splits(X_train_df, y_train)
+
+gs_nn = GridSearchCV(clf_nn, param_grid=parameter_grid, scoring='neg_log_loss', n_jobs=-1, cv=cross_validation, verbose=2, refit=True)
+gs_nn.fit(X_train_df, y_train)
+print('- Best score: %.4f' % gs_nn.best_score_)
+print('- Best params: %s' % gs_nn.best_params_)
+
+
+# In[]
+    
+
+# In[Plotting confusion matrix]
 import itertools
 
 def plot_confusion_matrix(cm, classes,
@@ -302,47 +339,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xlabel('Predicted label')
 
 
-test_cm = confusion_matrix(y_val, y_hat_val, labels=[0,1,2])
+test_cm = confusion_matrix(y_test, y_hat_test, labels=[0,1,2])
 
 plot_confusion_matrix(test_cm, classes = ['low','medium','high'], normalize=False)
 
-
-
-# In[]
-# hyperparam optimisation for random forest
-forest = RandomForestClassifier(max_features='sqrt', verbose=1, class_weight = 'balanced')
-
-parameter_grid = {
-                 'max_depth' : [7,8],
-                 'n_estimators': [250,500,1000],
-                 'criterion': ['gini','entropy']
-                 }
-
-cross_validation = StratifiedKFold(n_splits=3)
-cross_validation.get_n_splits(X_train_df, y_train)
-
-grid_search = GridSearchCV(forest, param_grid=parameter_grid, cv=cross_validation, n_jobs=4, scoring='neg_log_loss')
-grid_search.fit(X_train_df, y_train)
-
-print('Best score: {}'.format(grid_search.best_score_))
-print('Best parameters: {}'.format(grid_search.best_params_))
-
-# In[]
-# hyperparam optimisation for neural net
-clf_nn = MLPClassifier(solver='lbfgs', random_state=1)
-parameter_grid = {
-                  'alpha': [1e-6, 1e-5],
-                  'activation': ['tanh', 'relu', 'logistic'],
-                  'hidden_layer_sizes': [(10, 30, 5), (30, 30, 5)]
-                 }
-
-cross_validation = StratifiedKFold(n_splits=3)
-cross_validation.get_n_splits(X_train_df, y_train)
-
-gs_nn = GridSearchCV(clf_nn, param_grid=parameter_grid, scoring='neg_log_loss', n_jobs=-1, cv=cross_validation, verbose=2, refit=True)
-gs_nn.fit(X_train_df, y_train)
-print('- Best score: %.4f' % gs_nn.best_score_)
-print('- Best params: %s' % gs_nn.best_params_)
-
-
-# In[]
