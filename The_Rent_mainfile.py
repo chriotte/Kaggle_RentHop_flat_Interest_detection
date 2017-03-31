@@ -40,8 +40,9 @@ X_test["building_quality"] = X_test.building_quality.apply(lambda x: x[0] if x !
 # In[]:
 # ### Description BoW - TO FINISH
 import nltk
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer,PorterStemmer
 import re, html
+
 
 description = "A Brand New 3 Bedroom 1.5 bath ApartmentEnjoy These Following Apartment Features As You Rent Here? Modern Designed Bathroom w/ a Deep Spa Soaking Tub? Room to Room AC/Heat? Real Oak Hardwood Floors? Rain Forest Shower Head? SS steel Appliances w/ Chef Gas Cook Oven & LG Fridge? washer /dryer in the apt? Cable Internet Ready? Granite Counter Top Kitchen w/ lot of cabinet storage spaceIt's Just A Few blocks To L Train<br /><br />Don't miss out!<br /><br />We have several great apartments in the immediate area.<br /><br />For additional information 687-878-2229<p><a  website_redacted"
 
@@ -51,21 +52,47 @@ tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
 def makeFreqDict(description):
 # takes a string, splits it up and add the occurances of each word to the dictionary
     no_tags = tag_re.sub('', description)
+    no_tags = re.sub(r"(?s)<.*?>", " ", description)
+    no_tags = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", no_tags)
+    no_tags = re.sub("\\\\u(.){4}", " ", no_tags)
+    no_tags = re.sub(r"&nbsp;", " ", no_tags)
+    no_tags = re.sub(r"\s{2,}", " ", no_tags)
     description = html.escape(no_tags)
+    stemmer = PorterStemmer()
     words = nltk.tokenize.word_tokenize(description)
-
+    wordArray = []
     unimportant_words = [':', 'http', '.', ',', '?', '...', "'s", "n't", 'RT', ';', '&', ')', '``', 'u', '(', "''", '|',]
     for word in words:
         if word not in unimportant_words:
             word = WordNetLemmatizer().lemmatize(word)
-
+            word = stemmer.stem(word)
             if word in wordFreqDict:
                 wordFreqDict[word] += 1
             else:
                 wordFreqDict[word] = 1
+                wordArray.append(word)
+    return wordArray
 
 
-#makeFreqDict(description)
+makeFreqDict(description)
+# In[] # make a new decription field of words only
+
+#curDescription = df['description'].to_dict()
+#df['new_description'] = ""
+#for key in curDescription:
+#    curDescription[key] = makeFreqDict(curDescription[key])
+#    
+#    
+#df.replace({"new_description": curDescription})
+#    
+#    
+#    
+    
+
+
+
+
+
 # In[]
 # Make a word cloud from features and description, the word cloud is made trhoug wordle.net 
 
