@@ -159,10 +159,42 @@ plt.ylabel('Occurances')
 plt.xlabel('Number of bedrooms')
 
 # In[]
+# Variant 1
 sns.countplot(x='hour_created', hue='interest_level', data=df)
+plt.title("Interest by hour posted", fontsize = 18)
 plt.ylabel('Number of Occurrences', fontsize=15)
 plt.xlabel('Hour of the day posted', fontsize=15)
 plt.show()
+
+# In[]
+
+# Variant 1
+sns.countplot(x='hour_created',data=df)
+plt.title("Number of apartments by hour posted", fontsize = 18)
+plt.ylabel('Number of Occurrences', fontsize=15)
+plt.xlabel('Hour of the day posted', fontsize=15)
+plt.show()
+
+# In[]
+sns.countplot(x='num_of_photos',data=df)
+plt.title("Number of photos in advert", fontsize = 18)
+plt.ylabel('Number of Occurrences', fontsize=15)
+plt.xlabel('Number of features', fontsize=15)
+plt.show()
+
+# In[]
+sns.countplot(x='day_of_week_created', hue='interest_level', data=df)
+plt.title("Interest by day of the week", fontsize = 18)
+plt.ylabel('Number of Occurrences', fontsize=15)
+plt.xlabel('Day of the week posted', fontsize=15)
+plt.show()
+
+# In[]
+
+manager = df['managerID']
+data = manager.sort_values(by='importance', ascending=False)
+sns.barplot(y = 'feature', x = 'importance', data=data)
+
 
 # In[14]:
 #==============================================================================

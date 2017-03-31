@@ -113,8 +113,6 @@ def makeFeatureQuality(strName,df):
         QualityTemp[key] = [totalScore]
     return QualityTemp
 
-
-
 def main(df,train):
 #==============================================================================
 # Control panel for price and location data
