@@ -159,42 +159,10 @@ plt.ylabel('Occurances')
 plt.xlabel('Number of bedrooms')
 
 # In[]
-# Variant 1
 sns.countplot(x='hour_created', hue='interest_level', data=df)
-plt.title("Interest by hour posted", fontsize = 18)
 plt.ylabel('Number of Occurrences', fontsize=15)
 plt.xlabel('Hour of the day posted', fontsize=15)
 plt.show()
-
-# In[]
-
-# Variant 1
-sns.countplot(x='hour_created',data=df)
-plt.title("Number of apartments by hour posted", fontsize = 18)
-plt.ylabel('Number of Occurrences', fontsize=15)
-plt.xlabel('Hour of the day posted', fontsize=15)
-plt.show()
-
-# In[]
-sns.countplot(x='num_of_photos',data=df)
-plt.title("Number of photos in advert", fontsize = 18)
-plt.ylabel('Number of Occurrences', fontsize=15)
-plt.xlabel('Number of features', fontsize=15)
-plt.show()
-
-# In[]
-sns.countplot(x='day_of_week_created', hue='interest_level', data=df)
-plt.title("Interest by day of the week", fontsize = 18)
-plt.ylabel('Number of Occurrences', fontsize=15)
-plt.xlabel('Day of the week posted', fontsize=15)
-plt.show()
-
-# In[]
-
-manager = df['managerID']
-data = manager.sort_values(by='importance', ascending=False)
-sns.barplot(y = 'feature', x = 'importance', data=data)
-
 
 # In[14]:
 #==============================================================================
@@ -220,53 +188,3 @@ print("STD of price per interest level \n", df[['price','interest_level']].group
 sns.distplot(df.price[df.interest_level == 'low'], hist=False, label='low')
 sns.distplot(df.price[df.interest_level == 'medium'], hist=False, label='medium')
 sns.distplot(df.price[df.interest_level == 'high'], hist=False, label='high')
-
-
-
-# In[]
-# Assess each brokers quality 
-
-
-# 1 get each broker
-# 2 get number of listings that are high or medium
-# 3 percentage of listings 
-
-
-def makeFeatureQuality(strName):
-    QualityTemp = (df.groupby(strName)['interest_level'].apply(list)).to_dict()
-    
-    for key in QualityTemp:
-        qualList = QualityTemp[key]
-        listLength = len(qualList)
-        totalScore = 1
-        for item in qualList:
-            if item == "low":
-                item = 0
-            elif item == "medium":
-                item = 1
-            elif item == "high":
-                item = 1
-            else:
-                item = -99999
-            totalScore =+ item
-        totalScore = totalScore / listLength
-        QualityTemp[key] = totalScore
-    return QualityTemp
-
-# adding the new value to the dataframe
-managerID = 'manager_id'
-buildingID = 'building_id'
-mangagerQuality = makeFeatureQuality(managerID)
-buildingQuality = makeFeatureQuality(buildingID)
-
-df["mangager_quality"] = ""  
-df["building_quality"] = ""   
-df["mangager_quality"] = df[managerID].map(mangagerQuality)
-df["building_quality"] = df[buildingID].map(buildingQuality)
-
-
-# In[16]:
-# bedrooms plot
-sns.countplot(x='building_quality',hue='price', data=df)
-plt.ylabel('Price')
-plt.xlabel('Building Quality')
