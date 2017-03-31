@@ -17,21 +17,20 @@ def newFeatures(initial_df):
     # convert created column into datetime type
     print("    Creating new features")
     try:
+        # Create datetime features
         initial_df['DateTime'] = pd.to_datetime(initial_df.created)
-        initial_df.drop('created', axis=1, inplace=True)
         initial_df['day_created'] = initial_df.DateTime.map(lambda x: x.day)
         initial_df['month_created'] = initial_df.DateTime.map(lambda x: x.month)
         initial_df['year_created'] = initial_df.DateTime.map(lambda x: x.year)
+        initial_df.drop('created', axis=1, inplace=True)
 
         # create feature for number of photos, features and description length
         initial_df['num_of_photos'] = initial_df.photos.map(len)
         initial_df['num_of_features'] = initial_df.features.map(len)
         initial_df['description_length'] = initial_df.description.apply(lambda x: len(x.split(" ")))
+        initial_df['studio'] = initial_df.bedrooms.apply(lambda x: 1 if x==0 else 0)
         
         # price per bedroom
-        # creating flag for bedrooms = 0 (studio)
-        initial_df['studio'] = initial_df.bedrooms.apply(lambda x: 1 if x==0 else 0)
-        # setting bedrooms/bathrooms = 0 to 1
         initial_df.bedrooms[initial_df.bedrooms == 0] = 1
         initial_df['price_per_bedroom'] = initial_df.price / initial_df.bedrooms
     except:
@@ -82,6 +81,7 @@ def boroughs(df):
                                                      args=(borough_list[key]), 
                                                      axis=1)
     return df
+
 # Assess each brokers quality 
 # 1 get each broker
 # 2 get number of listings that are high or medium
@@ -114,7 +114,7 @@ def main(df,train):
 #==============================================================================
 # Control panel for price and location data
 #==============================================================================
-    #price_low = 1000
+    #price_low = 1000    # To set cutoff manually instead of by %
     #price_high = 10000
     price_low = np.percentile(df['price'].values, 1)
     price_high = np.percentile(df['price'].values, 99)
@@ -151,7 +151,7 @@ def main(df,train):
 
     df = boroughs(df)
     
-    # adding the buuilding and manager quality 
+    # adding building and manager quality 
     managerQuality = 0
     buildingQuality = 0
     
