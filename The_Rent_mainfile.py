@@ -75,26 +75,8 @@ def makeFreqDict(description):
 
 
 makeFreqDict(description)
-# In[] # make a new decription field of words only
-
-#curDescription = df['description'].to_dict()
-#df['new_description'] = ""
-#for key in curDescription:
-#    curDescription[key] = makeFreqDict(curDescription[key])
-#    
-#    
-#df.replace({"new_description": curDescription})
-#    
-#    
-#    
-    
-
-
-
-
-
 # In[]
-# Make a word cloud from features and description, the word cloud is made trhoug wordle.net 
+# Make a word cloud from features and description, the word cloud is made trough wordle.net 
 
 # Making strings a data for word cloud
 allFeaturewords = df['features']
@@ -122,15 +104,7 @@ for key in wordFreqDict:
                     descWordsAndFreq += str(key) + " "
 print("Done with descWordsAndFreq")
 
-
-    
-
-
 #print(wordString)
-
-
-
-
 
 # In[17]:
 #==============================================================================
@@ -157,7 +131,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 # Splitting Dataset
 #==============================================================================
 
-# determine features to use for modelling prior to data split
+# determine features to use for modeling prior to data split
 
 # baseline features
 #features_to_use = ['bathrooms','bedrooms','price', 'longitude', 'latitude']
@@ -301,7 +275,6 @@ print('- Best params: %s' % gs_nn.best_params_)
 
 # In[]
     
-
 # In[Plotting confusion matrix]
 import itertools
 
