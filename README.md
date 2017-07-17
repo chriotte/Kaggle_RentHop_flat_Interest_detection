@@ -78,3 +78,10 @@ The main deliverable for this project was the predictive model. While in some in
 However, the neural network was quite accurate in predicting low interest apartments and the raw probabilities provide better insight than the absolute classification scores. 
 
 This could be used by Two Sigma to help the landlords that post to the site, that their apartment listing is showing behaviours of an apartment that receives low interest. It could then highlight the features that had the largest impact on the prediction to make recommendations how the landlord could improve their listing, and drive actionable decisions.
+
+
+## Authors
+
+* **Hesham Dar** 
+* **Petur Einarsson** 
+* **Christopher Ottesen** 
